@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import StartingPointPicker from '../components/StartingPointPicker';
 
 const STORAGE_KEY = 'class-management:support-tree';
@@ -404,7 +405,7 @@ function MainCanvas() {
       return (
           <StartingPointPicker
               icon={<LayoutTemplate size={32} />}
-              title="Bắt đầu sơ đồ hỗ trợ lớp học"
+              title="Bắt đầu sơ đồ hỗ trợ học tập"
               description="Tạo sơ đồ mới từ đầu, bắt đầu từ mẫu có sẵn, hoặc tải lên danh sách Excel (Cột STT, Tên học sinh, STT Quản lý) để tự động tạo."
               onBlank={startNewDiagram}
               blankLabel="Tạo sơ đồ mới"
@@ -463,6 +464,8 @@ function MainCanvas() {
 }
 
 export default function SupportTreePage() {
+  useDocumentTitle('Sơ đồ Hỗ trợ học tập');
+
   return (
     <ReactFlowProvider>
       <MainCanvas />

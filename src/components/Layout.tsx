@@ -12,7 +12,7 @@ export default function Layout() {
       <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-10">
         <NavLink to="/" className="flex items-center gap-3">
           <Logo />
-          <span className="text-lg font-bold tracking-tight">Công cụ Lớp học</span>
+          <span className="text-lg font-bold tracking-tight">Quản lý lớp học</span>
         </NavLink>
         <nav className="flex items-center gap-1">
           {NAV_LINKS.map((link) => (
