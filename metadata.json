@@ -1,0 +1,8 @@
+{
+  "name": "Class Support Tree",
+  "description": "Visualize a class support network as a binary tree from an Excel file.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
