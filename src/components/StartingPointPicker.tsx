@@ -1,5 +1,5 @@
 import type { ChangeEvent, ReactNode } from 'react';
-import { FileDown, FolderPlus, Sparkles, Upload } from 'lucide-react';
+import { FolderPlus, Sparkles, Upload } from 'lucide-react';
 
 interface StartingPointPickerProps {
   icon: ReactNode;
@@ -15,9 +15,6 @@ interface StartingPointPickerProps {
   onExcelFile: (file: File) => void;
   excelLabel?: string;
   excelAccept?: string;
-  /** Hành động phụ, ví dụ tải file Excel mẫu để tham khảo định dạng. */
-  helperLabel?: string;
-  onHelperClick?: () => void;
 }
 
 export default function StartingPointPicker({
@@ -31,8 +28,6 @@ export default function StartingPointPicker({
   onExcelFile,
   excelLabel = 'Tải lên file Excel',
   excelAccept = '.xlsx, .xls, .csv',
-  helperLabel,
-  onHelperClick,
 }: StartingPointPickerProps) {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,16 +68,6 @@ export default function StartingPointPicker({
             {excelLabel}
             <input type="file" accept={excelAccept} className="hidden" onChange={handleFileChange} />
           </label>
-
-          {helperLabel && onHelperClick && (
-            <button
-              onClick={onHelperClick}
-              className="flex items-center justify-center gap-2 w-full py-3 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors text-sm font-semibold mt-2"
-            >
-              <FileDown size={18} />
-              {helperLabel}
-            </button>
-          )}
         </div>
       </div>
     </div>

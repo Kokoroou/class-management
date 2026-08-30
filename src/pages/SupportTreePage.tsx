@@ -379,18 +379,6 @@ function MainCanvas() {
     });
   }, []);
 
-  const handleDownloadSample = () => {
-     const sampleData = getSampleStudents().map(s => ({
-         'STT': s.index,
-         'Tên học sinh': s.name,
-         'STT Quản lý': s.parentId ?? ''
-     }));
-     const ws = XLSX.utils.json_to_sheet(sampleData);
-     const wb = XLSX.utils.book_new();
-     XLSX.utils.book_append_sheet(wb, ws, "Mẫu");
-     XLSX.writeFile(wb, "danhsach-mau.xlsx");
-  };
-
   const startNewDiagram = () => {
       const rootNode: Node = {
           id: '1',
@@ -420,8 +408,6 @@ function MainCanvas() {
               templateLabel="Bắt đầu từ mẫu"
               onExcelFile={parseExcelFile}
               excelLabel="Tải lên file Excel"
-              helperLabel="Tải file Excel mẫu"
-              onHelperClick={handleDownloadSample}
           />
       );
   }
