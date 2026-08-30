@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import SupportTreePage from './pages/SupportTreePage';
 import SeatingPage from './pages/SeatingPage';
+import NumerologyPage from './pages/NumerologyPage';
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/support-tree" element={<SupportTreePage />} />
         <Route path="/seating" element={<SeatingPage />} />
+        <Route path="/numerology" element={<NumerologyPage />} />
       </Route>
     </Routes>
   );

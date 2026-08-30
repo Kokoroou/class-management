@@ -5,6 +5,7 @@ const NAV_LINKS = [
   { to: '/', label: 'Trang chủ' },
   { to: '/support-tree', label: 'Sơ đồ hỗ trợ' },
   { to: '/seating', label: 'Chỗ ngồi' },
+  { to: '/numerology', label: 'Thần số học' },
 ];
 
 export default function Layout() {

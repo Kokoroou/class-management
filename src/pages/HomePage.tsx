@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, LayoutGrid, Network } from 'lucide-react';
+import { ArrowRight, LayoutGrid, Network, Sparkles } from 'lucide-react';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 interface ToolCard {
@@ -24,6 +24,13 @@ const TOOLS: ToolCard[] = [
       'Xếp chỗ ngồi bằng cách kéo-thả học sinh vào sơ đồ bàn ghế tùy chỉnh, rồi xuất ra ảnh PNG hoặc file Excel.',
     path: '/seating',
     icon: <LayoutGrid size={24} />,
+  },
+  {
+    title: 'Thần số học',
+    description:
+      'Nhập ngày sinh học sinh (thủ công hoặc từ Excel) để tự động tính Số chủ đạo và Số tên, lọc/sắp xếp để nhóm học sinh tương đồng.',
+    path: '/numerology',
+    icon: <Sparkles size={24} />,
   },
 ];
 
