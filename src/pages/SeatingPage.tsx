@@ -16,6 +16,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useResetTool } from '../hooks/useResetTool';
 import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
+import ToolPageToolbar from '../components/ToolPageToolbar';
 
 const STORAGE_KEY = 'class-management:seating';
 const DEFAULT_ROWS = 4;
@@ -283,20 +284,14 @@ export default function SeatingPage() {
           />
         </div>
         <div className="flex-1" />
-        <button
-          onClick={handleDownloadPNG}
-          className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-          title="Lưu sơ đồ (PNG)"
-        >
-          <ImageIcon size={18} />
-        </button>
-        <button
-          onClick={handleDownloadExcel}
-          className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-          title="Lưu danh sách chỗ ngồi (Excel)"
-        >
-          <FileSpreadsheet size={18} />
-        </button>
+        <ToolPageToolbar
+          groups={[
+            [
+              { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Lưu sơ đồ (PNG)', onClick: handleDownloadPNG },
+              { key: 'export-excel', icon: <FileSpreadsheet size={20} />, title: 'Lưu danh sách chỗ ngồi (Excel)', onClick: handleDownloadExcel },
+            ],
+          ]}
+        />
         <ResetButton onClick={resetTool} />
       </div>
 

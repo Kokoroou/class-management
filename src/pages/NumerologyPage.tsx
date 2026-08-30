@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import type { ChangeEvent } from 'react';
 import * as XLSX from 'xlsx';
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -7,6 +6,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useResetTool } from '../hooks/useResetTool';
 import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
+import ToolPageToolbar from '../components/ToolPageToolbar';
 import {
   NUMBER_MEANINGS,
   calcLifePathNumber,
@@ -202,12 +202,6 @@ function MainTable() {
     }
   };
 
-  const handleReplaceFile = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) importExcel(file);
-    e.target.value = '';
-  };
-
   const resetTool = useResetTool(STORAGE_KEY, () => setStudents([]));
 
   if (students.length === 0) {
@@ -247,18 +241,21 @@ function MainTable() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={addStudent}
-              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold"
-            >
-              <Plus size={16} />
-              Thêm học sinh
-            </button>
-            <label className="flex items-center gap-1.5 px-3 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer text-sm font-semibold">
-              <Upload size={16} />
-              Tải lên Excel
-              <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleReplaceFile} />
-            </label>
+            <ToolPageToolbar
+              groups={[
+                [{ key: 'add-student', icon: <Plus size={20} />, title: 'Thêm học sinh', onClick: addStudent }],
+                [
+                  {
+                    key: 'upload-excel',
+                    icon: <Upload size={20} />,
+                    title: 'Tải lên Excel',
+                    variant: 'upload',
+                    accept: '.xlsx, .xls, .csv',
+                    onFileSelect: importExcel,
+                  },
+                ],
+              ]}
+            />
             <ResetButton onClick={resetTool} />
           </div>
         </div>

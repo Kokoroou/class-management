@@ -32,6 +32,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useResetTool } from '../hooks/useResetTool';
 import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
+import ToolPageToolbar from '../components/ToolPageToolbar';
 
 const STORAGE_KEY = 'class-management:support-tree';
 
@@ -306,12 +307,6 @@ function MainCanvas() {
     reader.readAsBinaryString(file);
   }, [fitView, setNodes, setEdges]);
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) parseExcelFile(file);
-    e.target.value = '';
-  };
-
   const startFromTemplate = useCallback(() => {
     const students = getSampleStudents();
     const newNodes: Node[] = students.map(s => ({
@@ -427,29 +422,25 @@ function MainCanvas() {
       >
         <Background />
         <Controls />
-        <Panel position="top-center" className="mt-4 bg-white border border-slate-200 shadow-sm rounded-lg p-1.5 flex items-center gap-1">
-            <button onClick={onAddNode} className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Thêm Node (Tự nối nếu đang chọn một Node khác)">
-                <Plus size={20} />
-            </button>
-            <button onClick={deleteSelected} className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Xóa Node hoặc Cạnh đang chọn (Phím Backspace)">
-                <Trash2 size={20} />
-            </button>
-            <div className="w-px h-6 bg-slate-200 mx-1"></div>
-            <button onClick={onLayout} className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Tự động sắp xếp lại cây">
-                <LayoutTemplate size={20} />
-            </button>
-            <div className="w-px h-6 bg-slate-200 mx-1"></div>
-            <button onClick={onDownloadPNG} className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Lưu sơ đồ (PNG)">
-                <ImageIcon size={20} />
-            </button>
-            <button onClick={handleDownloadExcel} className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Lưu danh sách (Excel)">
-                <FileSpreadsheet size={20} />
-            </button>
-            <div className="w-px h-6 bg-slate-200 mx-1"></div>
-            <label className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer" title="Tải lên file Excel khác">
-                <Upload size={20} />
-                <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileInputChange} />
-            </label>
+        <Panel position="top-center" className="mt-4">
+            <ToolPageToolbar
+              groups={[
+                [
+                  { key: 'add-node', icon: <Plus size={20} />, title: 'Thêm Node (Tự nối nếu đang chọn một Node khác)', onClick: onAddNode },
+                  { key: 'delete-selected', icon: <Trash2 size={20} />, title: 'Xóa Node hoặc Cạnh đang chọn (Phím Backspace)', onClick: deleteSelected },
+                ],
+                [
+                  { key: 'layout', icon: <LayoutTemplate size={20} />, title: 'Tự động sắp xếp lại cây', onClick: onLayout },
+                ],
+                [
+                  { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Lưu sơ đồ (PNG)', onClick: onDownloadPNG },
+                  { key: 'export-excel', icon: <FileSpreadsheet size={20} />, title: 'Lưu danh sách (Excel)', onClick: handleDownloadExcel },
+                ],
+                [
+                  { key: 'upload-excel', icon: <Upload size={20} />, title: 'Tải lên file Excel khác', variant: 'upload', accept: '.xlsx, .xls, .csv', onFileSelect: parseExcelFile },
+                ],
+              ]}
+            />
         </Panel>
         <Panel position="top-right" className="mt-4 mr-4">
             <ResetButton onClick={resetTool} />
