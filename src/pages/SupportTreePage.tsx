@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import {
   ReactFlow,
@@ -24,11 +24,67 @@ import {
   Image as ImageIcon,
   LayoutTemplate,
   Plus,
-  Trash2,
-  FolderPlus,
-  FileDown
+  Trash2
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import StartingPointPicker from '../components/StartingPointPicker';
+
+const STORAGE_KEY = 'class-management:support-tree';
+
+interface SampleStudent {
+  index: number;
+  name: string;
+  parentId: number | null;
+}
+
+const getSampleStudents = (): SampleStudent[] =>
+  [...Array(30)].map((_, i) => {
+    const idx = i + 1;
+    const parentId =
+      idx === 1
+        ? null
+        : idx === 2 || idx === 3 || idx === 4
+        ? 1
+        : idx === 5 || idx === 6
+        ? 2
+        : idx === 7 || idx === 8
+        ? 3
+        : idx === 9 || idx === 10
+        ? 4
+        : idx === 11 || idx === 12
+        ? 5
+        : idx === 13
+        ? 6
+        : idx === 14 || idx === 15
+        ? 7
+        : idx === 16
+        ? 8
+        : idx === 17 || idx === 18
+        ? 9
+        : idx === 19
+        ? 10
+        : idx === 20 || idx === 21
+        ? 11
+        : idx === 22
+        ? 12
+        : idx === 23
+        ? 13
+        : idx === 24 || idx === 25
+        ? 14
+        : idx === 26
+        ? 15
+        : idx === 27
+        ? 16
+        : idx === 28
+        ? 17
+        : idx === 29
+        ? 18
+        : idx === 30
+        ? 19
+        : null;
+    return { index: idx, name: `Học sinh ${idx}`, parentId };
+  });
 
 const nodeWidth = 140;
 const nodeHeight = 65;
@@ -85,12 +141,20 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
 };
 
 function MainCanvas() {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [savedDiagram, setSavedDiagram] = useLocalStorage<{ nodes: Node[]; edges: Edge[] } | null>(
+    STORAGE_KEY,
+    null
+  );
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(savedDiagram?.nodes ?? []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(savedDiagram?.edges ?? []);
   const { fitView, screenToFlowPosition, getNodes, getEdges } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
+
+  useEffect(() => {
+    setSavedDiagram(nodes.length === 0 ? null : { nodes, edges });
+  }, [nodes, edges, setSavedDiagram]);
 
   const onConnect = useCallback((params: Connection) => {
       setEdges((eds) => addEdge({ ...params, type: 'straight', style: { stroke: '#cbd5e1', strokeWidth: 2 } }, eds));
@@ -150,10 +214,7 @@ function MainCanvas() {
       setEdges(eds => eds.filter(e => !e.selected));
   }, [setNodes, setEdges]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const parseExcelFile = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
@@ -238,10 +299,43 @@ function MainCanvas() {
         console.error(err);
         alert('Lỗi khi đọc file. Vui lòng kiểm tra lại định dạng Excel.');
       }
-      e.target.value = '';
     };
     reader.readAsBinaryString(file);
+  }, [fitView, setNodes, setEdges]);
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) parseExcelFile(file);
+    e.target.value = '';
   };
+
+  const startFromTemplate = useCallback(() => {
+    const students = getSampleStudents();
+    const newNodes: Node[] = students.map(s => ({
+      id: String(s.index),
+      type: 'custom',
+      position: { x: 0, y: 0 },
+      data: { index: s.index, name: s.name }
+    }));
+
+    const newEdges: Edge[] = [];
+    students.forEach(s => {
+      if (s.parentId !== null) {
+        newEdges.push({
+          id: `e${s.parentId}-${s.index}`,
+          source: String(s.parentId),
+          target: String(s.index),
+          type: 'straight',
+          style: { stroke: '#cbd5e1', strokeWidth: 2 }
+        });
+      }
+    });
+
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+    setTimeout(() => fitView({ padding: 0.2 }), 100);
+  }, [setNodes, setEdges, fitView]);
 
   const handleDownloadExcel = () => {
      const currentNodes = getNodes();
@@ -283,33 +377,11 @@ function MainCanvas() {
   }, []);
 
   const handleDownloadSample = () => {
-     const sampleData = [...Array(30)].map((_, i) => {
-         const idx = i + 1;
-         return {
-             'STT': idx,
-             'Tên học sinh': `Học sinh ${idx}`,
-             'STT Quản lý': idx === 1 ? '' : (
-                 idx === 2 || idx === 3 || idx === 4 ? 1 :
-                 idx === 5 || idx === 6 ? 2 :
-                 idx === 7 || idx === 8 ? 3 :
-                 idx === 9 || idx === 10 ? 4 :
-                 idx === 11 || idx === 12 ? 5 :
-                 idx === 13 ? 6 :
-                 idx === 14 || idx === 15 ? 7 :
-                 idx === 16 ? 8 :
-                 idx === 17 || idx === 18 ? 9 :
-                 idx === 19 ? 10 :
-                 idx === 20 || idx === 21 ? 11 :
-                 idx === 22 ? 12 :
-                 idx === 23 ? 13 :
-                 idx === 24 || idx === 25 ? 14 :
-                 idx === 26 ? 15 :
-                 idx === 27 ? 16 :
-                 idx === 28 || idx === 29 ? 17 :
-                 idx === 30 ? 19 : ''
-             )
-         }
-     });
+     const sampleData = getSampleStudents().map(s => ({
+         'STT': s.index,
+         'Tên học sinh': s.name,
+         'STT Quản lý': s.parentId ?? ''
+     }));
      const ws = XLSX.utils.json_to_sheet(sampleData);
      const wb = XLSX.utils.book_new();
      XLSX.utils.book_append_sheet(wb, ws, "Mẫu");
@@ -330,33 +402,19 @@ function MainCanvas() {
 
   if (nodes.length === 0) {
       return (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 z-20">
-             <div className="bg-white p-10 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center max-w-lg mx-4">
-               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                 <LayoutTemplate size={32} />
-               </div>
-               <h2 className="text-xl font-bold text-slate-900 mb-2">Bắt đầu sơ đồ hỗ trợ lớp học</h2>
-               <p className="text-sm text-slate-500 mb-8 max-w-sm">
-                 Tạo sơ đồ mới từ đầu, hoặc tải lên danh sách Excel (Cột STT, Tên học sinh, STT Quản lý) để tự động tạo.
-               </p>
-
-               <div className="flex flex-col gap-3 w-full">
-                   <button onClick={startNewDiagram} className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)]">
-                       <FolderPlus size={18} />
-                       Tạo sơ đồ mới
-                   </button>
-                   <label className="flex items-center justify-center gap-2 w-full py-3 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer text-sm font-semibold">
-                       <Upload size={18} />
-                       Tải lên file Excel
-                       <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} />
-                   </label>
-                   <button onClick={handleDownloadSample} className="flex items-center justify-center gap-2 w-full py-3 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors text-sm font-semibold mt-2">
-                       <FileDown size={18} />
-                       Tải file Excel mẫu
-                   </button>
-               </div>
-             </div>
-          </div>
+          <StartingPointPicker
+              icon={<LayoutTemplate size={32} />}
+              title="Bắt đầu sơ đồ hỗ trợ lớp học"
+              description="Tạo sơ đồ mới từ đầu, bắt đầu từ mẫu có sẵn, hoặc tải lên danh sách Excel (Cột STT, Tên học sinh, STT Quản lý) để tự động tạo."
+              onBlank={startNewDiagram}
+              blankLabel="Tạo sơ đồ mới"
+              onTemplate={startFromTemplate}
+              templateLabel="Bắt đầu từ mẫu"
+              onExcelFile={parseExcelFile}
+              excelLabel="Tải lên file Excel"
+              helperLabel="Tải file Excel mẫu"
+              onHelperClick={handleDownloadSample}
+          />
       );
   }
 
@@ -396,7 +454,7 @@ function MainCanvas() {
             <div className="w-px h-6 bg-slate-200 mx-1"></div>
             <label className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer" title="Tải lên file Excel khác">
                 <Upload size={20} />
-                <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} />
+                <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileInputChange} />
             </label>
         </Panel>
       </ReactFlow>
