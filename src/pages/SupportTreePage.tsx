@@ -29,7 +29,9 @@ import {
 import { toPng } from 'html-to-image';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useResetTool } from '../hooks/useResetTool';
 import StartingPointPicker from '../components/StartingPointPicker';
+import ResetButton from '../components/ResetButton';
 
 const STORAGE_KEY = 'class-management:support-tree';
 
@@ -401,6 +403,11 @@ function MainCanvas() {
       setTimeout(() => fitView(), 50);
   };
 
+  const resetTool = useResetTool(STORAGE_KEY, () => {
+      setNodes([]);
+      setEdges([]);
+  });
+
   if (nodes.length === 0) {
       return (
           <StartingPointPicker
@@ -457,6 +464,9 @@ function MainCanvas() {
                 <Upload size={20} />
                 <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileInputChange} />
             </label>
+        </Panel>
+        <Panel position="top-right" className="mt-4 mr-4">
+            <ResetButton onClick={resetTool} />
         </Panel>
       </ReactFlow>
     </div>
