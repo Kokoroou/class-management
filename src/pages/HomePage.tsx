@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Network } from 'lucide-react';
+import { ArrowRight, LayoutGrid, Network } from 'lucide-react';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 interface ToolCard {
@@ -17,6 +17,13 @@ const TOOLS: ToolCard[] = [
       'Dựng sơ đồ mạng lưới hỗ trợ trong lớp từ file Excel danh sách học sinh, chỉnh sửa trực quan và xuất lại kết quả.',
     path: '/support-tree',
     icon: <Network size={24} />,
+  },
+  {
+    title: 'Sơ đồ chỗ ngồi',
+    description:
+      'Xếp chỗ ngồi bằng cách kéo-thả học sinh vào sơ đồ bàn ghế tùy chỉnh, rồi xuất ra ảnh PNG hoặc file Excel.',
+    path: '/seating',
+    icon: <LayoutGrid size={24} />,
   },
 ];
 

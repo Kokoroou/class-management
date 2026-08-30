@@ -4,6 +4,7 @@ import Logo from './Logo';
 const NAV_LINKS = [
   { to: '/', label: 'Trang chủ' },
   { to: '/support-tree', label: 'Sơ đồ hỗ trợ' },
+  { to: '/seating', label: 'Chỗ ngồi' },
 ];
 
 export default function Layout() {
