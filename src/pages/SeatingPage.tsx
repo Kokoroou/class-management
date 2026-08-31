@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { DragEvent } from 'react';
+import type { DragEvent, KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import * as XLSX from 'xlsx';
 import {
   Columns3,
@@ -14,6 +14,8 @@ import { toPng } from 'html-to-image';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useResetTool } from '../hooks/useResetTool';
+import { useSelection } from '../hooks/useSelection';
+import { useMarqueeSelection } from '../hooks/useMarqueeSelection';
 import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
 import ToolPageToolbar from '../components/ToolPageToolbar';
@@ -103,7 +105,25 @@ export default function SeatingPage() {
   const [data, setData] = useLocalStorage<SeatingData | null>(STORAGE_KEY, null);
   const [newStudentName, setNewStudentName] = useState('');
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
+  const editingOriginalNameRef = useRef('');
   const captureRef = useRef<HTMLDivElement>(null);
+  const poolContainerRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+
+  const poolSelection = useSelection<number>();
+  const gridSelection = useSelection<string>();
+
+  const poolMarquee = useMarqueeSelection({
+    containerRef: poolContainerRef,
+    onSelect: (ids, additive) => poolSelection.selectMany(ids.map(Number), additive),
+    onBackgroundClick: poolSelection.clear,
+  });
+  const gridMarquee = useMarqueeSelection({
+    containerRef: gridContainerRef,
+    onSelect: (ids, additive) => gridSelection.selectMany(ids, additive),
+    onBackgroundClick: gridSelection.clear,
+  });
 
   const resetTool = useResetTool(STORAGE_KEY, () => setData(null));
 
@@ -147,6 +167,30 @@ export default function SeatingPage() {
       if (seatKey) delete seatAssignments[seatKey];
       return { ...prev, students: prev.students.filter((s) => s.index !== studentIndex), seatAssignments };
     });
+  };
+
+  const updateStudentName = (studentIndex: number, name: string) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      return { ...prev, students: prev.students.map((s) => (s.index === studentIndex ? { ...s, name } : s)) };
+    });
+  };
+
+  const startEditingStudent = (studentIndex: number, currentName: string) => {
+    editingOriginalNameRef.current = currentName;
+    setEditingStudentId(studentIndex);
+  };
+
+  const commitEditingStudent = () => setEditingStudentId(null);
+
+  const cancelEditingStudent = (studentIndex: number) => {
+    updateStudentName(studentIndex, editingOriginalNameRef.current);
+    setEditingStudentId(null);
+  };
+
+  const handleNameEditKeyDown = (studentIndex: number) => (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitEditingStudent();
+    else if (e.key === 'Escape') cancelEditingStudent(studentIndex);
   };
 
   const handleUnassign = (studentIndex: number) => {
@@ -224,8 +268,8 @@ export default function SeatingPage() {
 
   const handleDownloadExcel = () => {
     if (!data) return;
-    const studentByIndex = new Map(data.students.map((s) => [s.index, s.name]));
-    const rows = Object.entries(data.seatAssignments).map(([key, studentIndex]) => {
+    const studentByIndex = new Map<number, string>(data.students.map((s) => [s.index, s.name]));
+    const rows = Object.entries(data.seatAssignments).map(([key, studentIndex]: [string, number]) => {
       const [r, c] = key.split('-').map(Number);
       return { Hàng: r + 1, Cột: c + 1, 'Tên học sinh': studentByIndex.get(studentIndex) ?? '' };
     });
@@ -252,7 +296,7 @@ export default function SeatingPage() {
     );
   }
 
-  const studentByIndex = new Map(data.students.map((s) => [s.index, s.name]));
+  const studentByIndex = new Map<number, string>(data.students.map((s) => [s.index, s.name]));
   const seatedIndexes = new Set(Object.values(data.seatAssignments));
   const unassignedStudents = data.students.filter((s) => !seatedIndexes.has(s.index));
 
@@ -298,9 +342,11 @@ export default function SeatingPage() {
 
       <div className="flex-1 flex overflow-hidden">
         <aside
-          className="w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden"
+          ref={poolContainerRef}
+          className="relative w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden"
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDropOnPool}
+          onMouseDown={poolMarquee.onMouseDown}
         >
           <div className="p-3 border-b border-slate-200 flex gap-1.5">
             <input
@@ -327,24 +373,63 @@ export default function SeatingPage() {
             {unassignedStudents.length === 0 && (
               <p className="text-xs text-slate-400 italic">Không còn học sinh nào chưa xếp chỗ.</p>
             )}
-            {unassignedStudents.map((s) => (
-              <div
-                key={s.index}
-                draggable
-                onDragStart={(e) => handleDragStart(e, s.index)}
-                className="group flex items-center justify-between gap-2 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-700 cursor-grab select-none hover:border-blue-300"
-              >
-                <span className="truncate">{s.name}</span>
-                <button
-                  onClick={() => handleRemoveStudent(s.index)}
-                  className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity shrink-0"
-                  title="Xóa học sinh"
+            {unassignedStudents.map((s) => {
+              const isSelected = poolSelection.isSelected(s.index);
+              const isEditing = editingStudentId === s.index;
+              return (
+                <div
+                  key={s.index}
+                  draggable={!isEditing}
+                  onDragStart={(e) => handleDragStart(e, s.index)}
+                  onClick={(e: ReactMouseEvent) => {
+                    if (isEditing) return;
+                    poolSelection.handleItemClick(s.index, e);
+                  }}
+                  onDoubleClick={() => startEditingStudent(s.index, s.name)}
+                  data-marquee-id={String(s.index)}
+                  className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 border rounded-md text-sm cursor-grab select-none transition-colors ${
+                    isSelected
+                      ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-200 text-slate-900'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-blue-300'
+                  }`}
                 >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
+                  {isEditing ? (
+                    <input
+                      autoFocus
+                      value={s.name}
+                      onChange={(e) => updateStudentName(s.index, e.target.value)}
+                      onBlur={commitEditingStudent}
+                      onKeyDown={handleNameEditKeyDown(s.index)}
+                      className="flex-1 min-w-0 outline-none bg-white border border-blue-300 rounded px-1 text-sm"
+                    />
+                  ) : (
+                    <span className="truncate">{s.name}</span>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveStudent(s.index);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity shrink-0"
+                    title="Xóa học sinh"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
+          {poolMarquee.marqueeRect && (
+            <div
+              className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
+              style={{
+                left: poolMarquee.marqueeRect.left,
+                top: poolMarquee.marqueeRect.top,
+                width: poolMarquee.marqueeRect.width,
+                height: poolMarquee.marqueeRect.height,
+              }}
+            />
+          )}
         </aside>
 
         <div className="flex-1 overflow-auto p-8 flex justify-center">
@@ -353,8 +438,10 @@ export default function SeatingPage() {
               BẢNG
             </div>
             <div
-              className="grid gap-3"
+              ref={gridContainerRef}
+              className="relative grid gap-3"
               style={{ gridTemplateColumns: `repeat(${data.cols}, minmax(76px, 1fr))` }}
+              onMouseDown={gridMarquee.onMouseDown}
             >
               {[...Array(data.rows)].map((_, r) =>
                 [...Array(data.cols)].map((_, c) => {
@@ -362,31 +449,57 @@ export default function SeatingPage() {
                   const studentIndex = data.seatAssignments[key];
                   const studentName = studentIndex !== undefined ? studentByIndex.get(studentIndex) : undefined;
                   const isOver = dragOverKey === key;
+                  const isSelected = gridSelection.isSelected(key);
+                  const isEditingCell = studentIndex !== undefined && editingStudentId === studentIndex;
                   return (
                     <div
                       key={key}
+                      data-marquee-id={key}
                       onDragOver={(e) => {
                         e.preventDefault();
                         setDragOverKey(key);
                       }}
                       onDragLeave={() => setDragOverKey((k) => (k === key ? null : k))}
                       onDrop={handleDropOnSeat(key)}
+                      onClick={(e: ReactMouseEvent) => {
+                        if (isEditingCell) return;
+                        gridSelection.handleItemClick(key, e);
+                      }}
+                      onDoubleClick={() => {
+                        if (studentIndex !== undefined && studentName) startEditingStudent(studentIndex, studentName);
+                      }}
                       className={`relative h-20 w-20 flex flex-col items-center justify-center rounded-lg border px-1 transition-colors ${
                         studentName ? 'bg-white border-slate-300 shadow-sm' : 'bg-white/60 border-dashed border-slate-300'
-                      } ${isOver ? '!border-blue-500 bg-blue-50' : ''}`}
+                      } ${isOver ? '!border-blue-500 bg-blue-50' : ''} ${
+                        isSelected ? '!border-blue-600 ring-2 ring-blue-200' : ''
+                      }`}
                     >
                       {studentName ? (
                         <>
-                          <span
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, studentIndex!)}
-                            className="text-xs font-medium text-slate-800 truncate w-full text-center cursor-grab select-none"
-                            title={studentName}
-                          >
-                            {studentName}
-                          </span>
+                          {isEditingCell ? (
+                            <input
+                              autoFocus
+                              value={studentName}
+                              onChange={(e) => updateStudentName(studentIndex!, e.target.value)}
+                              onBlur={commitEditingStudent}
+                              onKeyDown={handleNameEditKeyDown(studentIndex!)}
+                              className="w-full text-xs text-center outline-none bg-white border border-blue-300 rounded px-0.5"
+                            />
+                          ) : (
+                            <span
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, studentIndex!)}
+                              className="text-xs font-medium text-slate-800 truncate w-full text-center cursor-grab select-none"
+                              title={studentName}
+                            >
+                              {studentName}
+                            </span>
+                          )}
                           <button
-                            onClick={() => handleUnassign(studentIndex!)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnassign(studentIndex!);
+                            }}
                             className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center bg-white border border-slate-300 rounded-full text-slate-400 hover:text-red-500 hover:border-red-300"
                             title="Bỏ ra khỏi chỗ ngồi"
                           >
@@ -399,6 +512,17 @@ export default function SeatingPage() {
                     </div>
                   );
                 })
+              )}
+              {gridMarquee.marqueeRect && (
+                <div
+                  className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
+                  style={{
+                    left: gridMarquee.marqueeRect.left,
+                    top: gridMarquee.marqueeRect.top,
+                    width: gridMarquee.marqueeRect.width,
+                    height: gridMarquee.marqueeRect.height,
+                  }}
+                />
               )}
             </div>
           </div>

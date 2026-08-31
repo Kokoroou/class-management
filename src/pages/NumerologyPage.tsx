@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import * as XLSX from 'xlsx';
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useResetTool } from '../hooks/useResetTool';
+import { useSelection } from '../hooks/useSelection';
 import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
 import ToolPageToolbar from '../components/ToolPageToolbar';
@@ -127,6 +129,9 @@ function MainTable() {
   const [sortKey, setSortKey] = useState<SortKey>('order');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [filterLifePath, setFilterLifePath] = useState<number | 'all'>('all');
+  const rowSelection = useSelection<string>();
+  const [editingCell, setEditingCell] = useState<{ id: string; field: 'name' | 'birthDate' } | null>(null);
+  const editingOriginalRef = useRef('');
 
   const rows = useMemo(
     () =>
@@ -180,6 +185,23 @@ function MainTable() {
 
   const updateStudent = (id: string, patch: Partial<Student>) => {
     setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  };
+
+  const startEditingCell = (id: string, field: 'name' | 'birthDate', currentValue: string) => {
+    editingOriginalRef.current = currentValue;
+    setEditingCell({ id, field });
+  };
+
+  const commitEditingCell = () => setEditingCell(null);
+
+  const cancelEditingCell = () => {
+    if (editingCell) updateStudent(editingCell.id, { [editingCell.field]: editingOriginalRef.current });
+    setEditingCell(null);
+  };
+
+  const handleCellEditKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitEditingCell();
+    else if (e.key === 'Escape') cancelEditingCell();
   };
 
   const addStudent = () => {
@@ -290,42 +312,73 @@ function MainTable() {
               </tr>
             </thead>
             <tbody>
-              {displayRows.map((row, i) => (
-                <tr key={row.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-                  <td className="px-4 py-2 text-slate-500 align-top">{i + 1}</td>
-                  <td className="px-4 py-2 align-top">
-                    <input
-                      value={row.name}
-                      onChange={(e) => updateStudent(row.id, { name: e.target.value })}
-                      placeholder="Họ và tên"
-                      className="w-full outline-none bg-transparent font-medium text-slate-900"
-                    />
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    <input
-                      value={row.birthDate}
-                      onChange={(e) => updateStudent(row.id, { birthDate: e.target.value })}
-                      placeholder="dd/mm/yyyy"
-                      className="w-full outline-none bg-transparent text-slate-600"
-                    />
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    <NumberBadge value={row.lifePath} />
-                  </td>
-                  <td className="px-4 py-2 align-top">
-                    <NumberBadge value={row.nameNumber} />
-                  </td>
-                  <td className="px-2 py-2 align-top">
-                    <button
-                      onClick={() => removeStudent(row.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="Xóa học sinh"
+              {displayRows.map((row, i) => {
+                const isRowSelected = rowSelection.isSelected(row.id);
+                const isEditingName = editingCell?.id === row.id && editingCell.field === 'name';
+                const isEditingBirthDate = editingCell?.id === row.id && editingCell.field === 'birthDate';
+                return (
+                  <tr
+                    key={row.id}
+                    onClick={() => rowSelection.selectOnly(row.id)}
+                    className={`border-b border-slate-100 last:border-0 cursor-default transition-colors ${
+                      isRowSelected ? 'bg-blue-50 hover:bg-blue-50' : 'hover:bg-slate-50/60'
+                    }`}
+                  >
+                    <td className="px-4 py-2 text-slate-500 align-top">{i + 1}</td>
+                    <td className="px-4 py-2 align-top" onDoubleClick={() => startEditingCell(row.id, 'name', row.name)}>
+                      {isEditingName ? (
+                        <input
+                          autoFocus
+                          value={row.name}
+                          onChange={(e) => updateStudent(row.id, { name: e.target.value })}
+                          onBlur={commitEditingCell}
+                          onKeyDown={handleCellEditKeyDown}
+                          placeholder="Họ và tên"
+                          className="w-full outline-none bg-white border border-blue-300 rounded px-1 font-medium text-slate-900"
+                        />
+                      ) : (
+                        <span className="block w-full font-medium text-slate-900">{row.name || 'Họ và tên'}</span>
+                      )}
+                    </td>
+                    <td
+                      className="px-4 py-2 align-top"
+                      onDoubleClick={() => startEditingCell(row.id, 'birthDate', row.birthDate)}
                     >
-                      <Trash2 size={15} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      {isEditingBirthDate ? (
+                        <input
+                          autoFocus
+                          value={row.birthDate}
+                          onChange={(e) => updateStudent(row.id, { birthDate: e.target.value })}
+                          onBlur={commitEditingCell}
+                          onKeyDown={handleCellEditKeyDown}
+                          placeholder="dd/mm/yyyy"
+                          className="w-full outline-none bg-white border border-blue-300 rounded px-1 text-slate-600"
+                        />
+                      ) : (
+                        <span className="block w-full text-slate-600">{row.birthDate || 'dd/mm/yyyy'}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 align-top">
+                      <NumberBadge value={row.lifePath} />
+                    </td>
+                    <td className="px-4 py-2 align-top">
+                      <NumberBadge value={row.nameNumber} />
+                    </td>
+                    <td className="px-2 py-2 align-top">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeStudent(row.id);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Xóa học sinh"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import {
   ReactFlow,
@@ -95,16 +95,46 @@ const nodeHeight = 65;
 
 const CustomNode = ({ data, id, selected }: any) => {
   const { updateNodeData } = useReactFlow();
+  const [isEditing, setIsEditing] = useState(false);
+  const originalNameRef = useRef(data.name);
+
+  const startEditing = () => {
+    originalNameRef.current = data.name;
+    setIsEditing(true);
+  };
+
+  const commitEditing = () => setIsEditing(false);
+
+  const cancelEditing = () => {
+    updateNodeData(id, { name: originalNameRef.current });
+    setIsEditing(false);
+  };
+
   return (
      <div className={`flex flex-col p-2.5 h-full w-[140px] bg-white border ${selected ? 'border-blue-600 shadow-[4px_4px_0px_rgba(37,99,235,0.2)]' : 'border-slate-900 shadow-[4px_4px_0px_rgba(15,23,42,0.1)]'} relative transition-colors`}>
        <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-slate-400 !border-none !rounded-none top-[-5px]" />
-       <input
-         className="font-semibold text-[13px] text-slate-900 truncate w-full text-center mt-0.5 outline-none bg-transparent"
-         value={data.name}
-         onChange={(e) => updateNodeData(id, { name: e.target.value })}
-         onKeyDown={(e) => e.stopPropagation()}
-         placeholder="Tên học sinh"
-       />
+       {isEditing ? (
+         <input
+           autoFocus
+           className="font-semibold text-[13px] text-slate-900 truncate w-full text-center mt-0.5 outline-none bg-transparent"
+           value={data.name}
+           onChange={(e) => updateNodeData(id, { name: e.target.value })}
+           onBlur={commitEditing}
+           onKeyDown={(e) => {
+             e.stopPropagation();
+             if (e.key === 'Enter') commitEditing();
+             else if (e.key === 'Escape') cancelEditing();
+           }}
+           placeholder="Tên học sinh"
+         />
+       ) : (
+         <span
+           className="font-semibold text-[13px] text-slate-900 truncate w-full text-center mt-0.5 cursor-default"
+           onDoubleClick={startEditing}
+         >
+           {data.name || 'Tên học sinh'}
+         </span>
+       )}
        <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-slate-400 !border-none !rounded-none bottom-[-5px]" />
      </div>
   );
@@ -416,6 +446,9 @@ function MainCanvas() {
         fitView
         className="bg-slate-50"
         deleteKeyCode={['Backspace', 'Delete']}
+        panOnDrag={[1, 2]}
+        selectionOnDrag
+        multiSelectionKeyCode="Control"
       >
         <Background />
         <Controls />
