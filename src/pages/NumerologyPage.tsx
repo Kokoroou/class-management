@@ -1,7 +1,18 @@
 import { useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import * as XLSX from 'xlsx';
-import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Sparkles, Trash2, Upload } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  Plus,
+  Sparkles,
+  Trash2,
+  Upload,
+} from 'lucide-react';
+import { toPng } from 'html-to-image';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useResetTool } from '../hooks/useResetTool';
@@ -132,6 +143,7 @@ function MainTable() {
   const rowSelection = useSelection<string>();
   const [editingCell, setEditingCell] = useState<{ id: string; field: 'name' | 'birthDate' } | null>(null);
   const editingOriginalRef = useRef('');
+  const captureRef = useRef<HTMLDivElement>(null);
 
   const rows = useMemo(
     () =>
@@ -212,6 +224,35 @@ function MainTable() {
     setStudents((prev) => prev.filter((s) => s.id !== id));
   };
 
+  const handleDeleteSelected = () => {
+    setStudents((prev) => prev.filter((s) => !rowSelection.selectedIds.has(s.id)));
+    rowSelection.clear();
+  };
+
+  const handleDownloadPNG = () => {
+    if (!captureRef.current) return;
+    toPng(captureRef.current, { backgroundColor: '#ffffff' }).then((dataUrl) => {
+      const a = document.createElement('a');
+      a.setAttribute('download', 'than-so-hoc.png');
+      a.setAttribute('href', dataUrl);
+      a.click();
+    });
+  };
+
+  const handleDownloadExcel = () => {
+    const data = displayRows.map((r, i) => ({
+      STT: i + 1,
+      'Tên học sinh': r.name,
+      'Ngày sinh': r.birthDate,
+      'Số chủ đạo': r.lifePath ?? '',
+      'Số tên': r.nameNumber ?? '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Thần số học');
+    XLSX.writeFile(wb, 'than-so-hoc.xlsx');
+  };
+
   const startNewList = () => setStudents([{ id: makeId(), name: '', birthDate: '' }]);
   const startFromTemplate = () => setStudents(getSampleStudents());
   const importExcel = async (file: File) => {
@@ -225,6 +266,7 @@ function MainTable() {
   };
 
   const resetTool = useResetTool(STORAGE_KEY, () => setStudents([]));
+  const canDelete = rowSelection.selectedIds.size > 0;
 
   if (students.length === 0) {
     return (
@@ -266,8 +308,24 @@ function MainTable() {
             <ToolPageToolbar
               className="absolute left-1/2 -translate-x-1/2"
               groups={[
-                [{ key: 'add-student', icon: <Plus size={20} />, title: 'Thêm học sinh', onClick: addStudent }],
                 [
+                  { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Trích xuất PNG', onClick: handleDownloadPNG },
+                  {
+                    key: 'export-excel',
+                    icon: <FileSpreadsheet size={20} />,
+                    title: 'Trích xuất Excel',
+                    onClick: handleDownloadExcel,
+                  },
+                ],
+                [
+                  { key: 'add-student', icon: <Plus size={20} />, title: 'Thêm học sinh', onClick: addStudent },
+                  {
+                    key: 'delete-selected',
+                    icon: <Trash2 size={20} />,
+                    title: canDelete ? 'Xóa mục đã chọn' : 'Chọn học sinh để xóa',
+                    disabled: !canDelete,
+                    onClick: handleDeleteSelected,
+                  },
                   {
                     key: 'upload-excel',
                     icon: <Upload size={20} />,
@@ -283,7 +341,7 @@ function MainTable() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div ref={captureRef} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-left text-slate-500">
