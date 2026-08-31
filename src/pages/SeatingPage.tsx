@@ -258,7 +258,7 @@ export default function SeatingPage() {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 bg-white border-b border-slate-200 px-4 py-2 flex items-center gap-3 flex-wrap">
+      <div className="shrink-0 bg-white border-b border-slate-200 px-4 py-2 flex items-center gap-3 flex-wrap relative">
         <div className="flex items-center gap-1.5 text-sm text-slate-600">
           <Rows3 size={16} />
           <span>Hàng</span>
@@ -285,6 +285,7 @@ export default function SeatingPage() {
         </div>
         <div className="flex-1" />
         <ToolPageToolbar
+          className="absolute left-1/2 -translate-x-1/2"
           groups={[
             [
               { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Lưu sơ đồ (PNG)', onClick: handleDownloadPNG },

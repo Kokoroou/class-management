@@ -98,9 +98,6 @@ const CustomNode = ({ data, id, selected }: any) => {
   return (
      <div className={`flex flex-col p-2.5 h-full w-[140px] bg-white border ${selected ? 'border-blue-600 shadow-[4px_4px_0px_rgba(37,99,235,0.2)]' : 'border-slate-900 shadow-[4px_4px_0px_rgba(15,23,42,0.1)]'} relative transition-colors`}>
        <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-slate-400 !border-none !rounded-none top-[-5px]" />
-       <span className="font-mono text-[10px] text-blue-600 mb-1 border-b border-slate-100 pb-1 block text-center">
-         STT: {data.index < 10 ? `0${data.index}` : data.index}
-       </span>
        <input
          className="font-semibold text-[13px] text-slate-900 truncate w-full text-center mt-0.5 outline-none bg-transparent"
          value={data.name}
@@ -451,7 +448,7 @@ function MainCanvas() {
 }
 
 export default function SupportTreePage() {
-  useDocumentTitle('Sơ đồ Hỗ trợ học tập');
+  useDocumentTitle('Sơ đồ hỗ trợ học tập');
 
   return (
     <ReactFlowProvider>

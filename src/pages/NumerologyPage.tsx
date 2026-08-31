@@ -221,9 +221,9 @@ function MainTable() {
   }
 
   return (
-    <div className="w-full h-full overflow-y-auto p-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+    <div className="w-full h-full overflow-y-auto px-4 py-6">
+      <div className="w-full">
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap relative">
           <div className="flex items-center gap-2">
             <label className="text-sm text-slate-600">Lọc theo Số chủ đạo:</label>
             <select
@@ -242,6 +242,7 @@ function MainTable() {
 
           <div className="flex items-center gap-2">
             <ToolPageToolbar
+              className="absolute left-1/2 -translate-x-1/2"
               groups={[
                 [{ key: 'add-student', icon: <Plus size={20} />, title: 'Thêm học sinh', onClick: addStudent }],
                 [
