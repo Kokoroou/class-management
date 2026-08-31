@@ -1,8 +1,8 @@
 <div align="center">
 
-# Sơ đồ Hỗ trợ Lớp học
+# Quản lý Lớp học
 
-Công cụ trực quan hóa mạng lưới hỗ trợ trong lớp học dưới dạng sơ đồ cây phân cấp, tạo tự động từ file Excel danh sách học sinh.
+Bộ công cụ giúp giáo viên trực quan hóa và quản lý lớp học: sơ đồ hỗ trợ học tập, sơ đồ chỗ ngồi, và bảng thần số học — tất cả đều chạy hoàn toàn trên trình duyệt, không cần backend.
 
 **[Xem demo trực tuyến](https://kokoroou.github.io/class-management/)**
 
@@ -12,25 +12,67 @@ Công cụ trực quan hóa mạng lưới hỗ trợ trong lớp học dưới 
 
 ## Giới thiệu
 
-**Sơ đồ Hỗ trợ Lớp học** giúp giáo viên nhanh chóng dựng sơ đồ mô hình "đôi bạn cùng tiến" / nhóm hỗ trợ học tập trong lớp, dựa trên danh sách học sinh và mối quan hệ quản lý (STT Quản lý) được nhập từ file Excel. Sơ đồ có thể chỉnh sửa trực tiếp trên giao diện kéo-thả và xuất lại thành ảnh PNG hoặc file Excel.
+**Quản lý Lớp học** là một ứng dụng web tập hợp nhiều công cụ nhỏ phục vụ công việc thường ngày của giáo viên chủ nhiệm, dựa trên danh sách học sinh nhập từ file Excel hoặc nhập tay trực tiếp. Mỗi công cụ đều hỗ trợ: khởi tạo từ file mẫu có sẵn, chỉnh sửa trực quan trên giao diện (chọn, kéo-thả, sửa nhanh), lưu tự động vào trình duyệt (localStorage), và xuất kết quả ra ảnh PNG hoặc file Excel.
 
-## Tính năng
+## Các trang / route
 
-- **Nhập từ Excel**: tải lên file `.xlsx`/`.xls`/`.csv` chứa cột STT, Tên học sinh, STT Quản lý để tự động dựng sơ đồ.
-- **Tự động sắp xếp cây**: bố cục sơ đồ được sắp xếp tự động theo dạng cây phân cấp (sử dụng Dagre).
-- **Chỉnh sửa trực quan**: thêm/xóa node, đổi tên học sinh, nối/xóa quan hệ ngay trên canvas.
-- **Xuất kết quả**: lưu sơ đồ dưới dạng ảnh PNG hoặc xuất lại danh sách dưới dạng file Excel.
-- **File mẫu**: tải file Excel mẫu để biết đúng định dạng dữ liệu cần chuẩn bị.
+| Route | Công cụ |
+| --- | --- |
+| `/` | Trang chủ — danh sách các công cụ |
+| `/support-tree` | Sơ đồ hỗ trợ học tập |
+| `/seating` | Sơ đồ chỗ ngồi |
+| `/numerology` | Thần số học |
+
+## Tính năng chung giữa các công cụ
+
+- **3 điểm khởi đầu**: tạo mới trống, bắt đầu từ dữ liệu mẫu có sẵn, hoặc tải lên file Excel/CSV.
+- **Chọn & sửa nhanh**: click để chọn một hoặc nhiều mục (kéo chuột để chọn theo vùng — marquee selection, giữ Ctrl/Shift để chọn thêm), double-click để đổi tên/sửa nội dung ngay tại chỗ.
+- **Lưu tự động**: dữ liệu đang làm việc được lưu vào `localStorage` của trình duyệt, không mất khi tải lại trang.
+- **Nút Reset**: xóa dữ liệu hiện tại để quay về màn hình chọn điểm khởi đầu.
+- **Xuất kết quả**: hầu hết công cụ đều cho phép xuất ảnh PNG và/hoặc file Excel.
+
+## Chi tiết từng công cụ
+
+### 1. Sơ đồ hỗ trợ học tập (`/support-tree`)
+
+Dựng sơ đồ mạng lưới "đôi bạn cùng tiến" / nhóm hỗ trợ trong lớp dưới dạng cây phân cấp.
+
+- Nhập từ Excel (cột STT, Tên học sinh, STT Quản lý) hoặc tạo mẫu 30 học sinh sẵn có.
+- Tự động sắp xếp bố cục cây bằng Dagre; sắp xếp lại bất cứ lúc nào bằng nút **Tự động sắp xếp**.
+- Thêm/xóa node, nối/xóa quan hệ (cạnh) trực tiếp trên canvas; thêm node mới tự nối vào node đang chọn.
+- Xuất sơ đồ ra ảnh PNG hoặc xuất lại danh sách quan hệ ra file Excel.
+
+### 2. Sơ đồ chỗ ngồi (`/seating`)
+
+Xếp chỗ ngồi học sinh bằng kéo-thả vào sơ đồ bàn ghế tùy chỉnh.
+
+- Tùy chỉnh số hàng/cột của lớp, và loại bàn (1–4 chỗ ngồi mỗi bàn).
+- Kéo-thả học sinh giữa hàng chờ và các bàn, hoặc hoán đổi vị trí giữa hai học sinh.
+- Chọn nhiều bàn/học sinh để **nhóm** thành một bàn lớn hơn, hoặc **tách** một bàn thành các bàn đơn.
+- Mẫu sẵn có: 30 học sinh xếp vào các bàn đôi (3 bàn/hàng x 5 hàng).
+- Xuất sơ đồ ra ảnh PNG hoặc file Excel (kèm sheet cấu hình); khi import lại đúng file đã xuất, sơ đồ chỗ ngồi được khôi phục nguyên trạng (không chỉ danh sách học sinh).
+
+### 3. Thần số học (`/numerology`)
+
+Nhập ngày sinh và họ tên học sinh để tự động tính các chỉ số thần số học, phục vụ việc chia nhóm/xếp lớp.
+
+- Tính tự động **Số chủ đạo** (từ ngày sinh) và **Số tên** (từ họ tên) cho từng học sinh, kèm ý nghĩa mỗi con số.
+- Nhập từ Excel (cột Tên học sinh, Ngày sinh dd/mm/yyyy) hoặc bắt đầu từ mẫu 15 học sinh có sẵn.
+- Sắp xếp theo STT/tên/Số chủ đạo/Số tên, và lọc danh sách theo Số chủ đạo để nhóm học sinh tương đồng.
+- Thêm/xóa học sinh, sửa tên và ngày sinh trực tiếp trên bảng.
+- Xuất bảng ra ảnh PNG hoặc file Excel.
 
 ## Công nghệ sử dụng
 
 - [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/) — build tool
-- [@xyflow/react](https://reactflow.dev/) — vẽ sơ đồ dạng node/edge
+- [React Router](https://reactrouter.com/) — điều hướng giữa các công cụ
+- [@xyflow/react](https://reactflow.dev/) — vẽ sơ đồ dạng node/edge (Sơ đồ hỗ trợ học tập)
 - [Dagre](https://github.com/dagrejs/dagre) — tự động bố cục cây
 - [SheetJS (xlsx)](https://sheetjs.com/) — đọc/ghi file Excel
 - [Tailwind CSS](https://tailwindcss.com/) — styling
-- [html-to-image](https://github.com/bubkoo/html-to-image) — xuất sơ đồ ra PNG
+- [html-to-image](https://github.com/bubkoo/html-to-image) — xuất sơ đồ/bảng ra PNG
+- [lucide-react](https://lucide.dev/) — icon
 
 ## Bắt đầu
 
@@ -73,24 +115,28 @@ bun run lint
 
 ## Định dạng file Excel đầu vào
 
-File Excel cần có tối thiểu các cột sau (không phân biệt vị trí, tên cột có thể linh hoạt):
+Mỗi công cụ chấp nhận một định dạng cột hơi khác nhau (tên cột linh hoạt, không phân biệt vị trí):
 
-| Cột | Ý nghĩa | Ví dụ |
+| Công cụ | Các cột cần có | Ví dụ |
 | --- | --- | --- |
-| STT | Số thứ tự của học sinh | `1`, `2`, `3`... |
-| Tên học sinh | Họ và tên học sinh | `Nguyễn Văn A` |
-| STT Quản lý | STT của học sinh phụ trách/hỗ trợ | `1` |
+| Sơ đồ hỗ trợ học tập | STT, Tên học sinh, STT Quản lý | `1`, `Nguyễn Văn A`, `1` |
+| Sơ đồ chỗ ngồi | STT, Tên học sinh | `1`, `Nguyễn Văn A` |
+| Thần số học | Tên học sinh, Ngày sinh (dd/mm/yyyy) | `Nguyễn Văn A`, `01/02/2010` |
 
-Có thể tải file Excel mẫu ngay trong ứng dụng (nút **Tải file Excel mẫu**) để tham khảo định dạng chuẩn.
+Có thể bắt đầu từ dữ liệu mẫu ngay trong mỗi công cụ (nút **Bắt đầu từ mẫu** ở màn hình khởi đầu) để tham khảo định dạng chuẩn.
 
 ## Cấu trúc thư mục
 
 ```
 class-management/
 ├── src/
-│   ├── App.tsx        # Toàn bộ logic chính: đọc Excel, dựng sơ đồ, xuất file
-│   ├── main.tsx        # Điểm khởi chạy ứng dụng React
-│   └── index.css       # Tailwind CSS entry
+│   ├── components/     # Layout, ResetButton, ToolPageToolbar, StartingPointPicker...
+│   ├── hooks/           # useLocalStorage, useSelection, useMarqueeSelection, useResetTool...
+│   ├── pages/            # HomePage, SupportTreePage, SeatingPage, NumerologyPage
+│   ├── utils/            # numerology.ts — tính Số chủ đạo/Số tên
+│   ├── App.tsx           # Khai báo route
+│   ├── main.tsx          # Điểm khởi chạy ứng dụng React
+│   └── index.css         # Tailwind CSS entry
 ├── index.html
 ├── vite.config.ts
 └── package.json
