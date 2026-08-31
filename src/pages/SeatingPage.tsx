@@ -88,25 +88,44 @@ const buildTemplateData = (): SeatingData => {
   return { students, rows, cols, tables, defaultTableType: 2 };
 };
 
-const parseStudentsFromSheet = (file: File): Promise<Student[]> =>
+const SEATING_SHEET_NAME = 'Chỗ ngồi';
+const CONFIG_SHEET_NAME = 'Cấu hình';
+
+const asTableType = (n: number): TableType => ((TABLE_TYPES as readonly number[]).includes(n) ? (n as TableType) : 1);
+
+/**
+ * Đọc file Excel danh sách học sinh. Nếu file có đủ cột Hàng/Cột/Vị trí trong
+ * bàn (tức là file do chính trang này xuất ra), khôi phục lại đúng sơ đồ chỗ
+ * ngồi (bàn, loại bàn, học sinh chưa xếp chỗ); nếu không, coi như file danh
+ * sách học sinh thuần (cột STT, Tên học sinh) và xếp toàn bộ vào hàng chờ.
+ */
+const parseSeatingFromSheet = (file: File): Promise<SeatingData> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1 });
-        if (data.length === 0) return resolve([]);
+        const mainSheetName = wb.SheetNames.includes(SEATING_SHEET_NAME) ? SEATING_SHEET_NAME : wb.SheetNames[0];
+        const data = XLSX.utils.sheet_to_json<any[]>(wb.Sheets[mainSheetName], { header: 1 });
+        if (data.length === 0) return resolve(buildData([]));
 
         let sttCol = -1;
         let nameCol = -1;
+        let rowCol = -1;
+        let colCol = -1;
+        let typeCol = -1;
+        let seatCol = -1;
         const headerRow = data[0];
         if (headerRow) {
           headerRow.forEach((cell: any, idx: number) => {
             const str = String(cell).toLowerCase().trim();
             if (str === 'stt' || str === 'id' || str === 'số thứ tự') sttCol = idx;
             else if (str.includes('tên') || str.includes('name') || str.includes('họ và')) nameCol = idx;
+            else if (str === 'hàng') rowCol = idx;
+            else if (str === 'cột') colCol = idx;
+            else if (str.includes('loại bàn')) typeCol = idx;
+            else if (str.includes('vị trí trong bàn')) seatCol = idx;
           });
         }
         if (sttCol === -1) sttCol = 0;
@@ -119,6 +138,7 @@ const parseStudentsFromSheet = (file: File): Promise<Student[]> =>
             : 0;
 
         const students: Student[] = [];
+        const seatRows: { index: number; row: number; col: number; type: TableType; seat: number }[] = [];
         for (let i = startIndex; i < data.length; i++) {
           const row = data[i];
           if (!row || row.length === 0) continue;
@@ -127,8 +147,49 @@ const parseStudentsFromSheet = (file: File): Promise<Student[]> =>
           let index = parseInt(row[sttCol], 10);
           if (isNaN(index)) index = students.length + 1;
           students.push({ index, name: String(name) });
+
+          if (rowCol !== -1 && colCol !== -1 && seatCol !== -1) {
+            const r = parseInt(row[rowCol], 10);
+            const c = parseInt(row[colCol], 10);
+            const seat = parseInt(row[seatCol], 10);
+            if (!isNaN(r) && !isNaN(c) && !isNaN(seat)) {
+              const type = typeCol !== -1 ? asTableType(parseInt(row[typeCol], 10)) : 1;
+              seatRows.push({ index, row: r - 1, col: c - 1, type, seat: seat - 1 });
+            }
+          }
         }
-        resolve(students);
+
+        // File không có thông tin sơ đồ (chỉ danh sách học sinh thuần) -> toàn bộ vào hàng chờ.
+        if (seatRows.length === 0) return resolve(buildData(students));
+
+        const tables: Record<string, Table> = {};
+        seatRows.forEach(({ index, row, col, type, seat }) => {
+          const key = `${row}-${col}`;
+          if (!tables[key]) tables[key] = { type, studentIndexes: [] };
+          tables[key].studentIndexes[seat] = index;
+        });
+        Object.values(tables).forEach((t) => {
+          t.studentIndexes = t.studentIndexes.filter((v) => v !== undefined);
+        });
+
+        let rows = Math.max(...Object.keys(tables).map((k) => Number(k.split('-')[0]) + 1));
+        let cols = Math.max(...Object.keys(tables).map((k) => Number(k.split('-')[1]) + 1));
+        let defaultTableType: TableType = 1;
+
+        if (wb.SheetNames.includes(CONFIG_SHEET_NAME)) {
+          const configRows = XLSX.utils.sheet_to_json<Record<string, any>>(wb.Sheets[CONFIG_SHEET_NAME]);
+          const cfg = configRows[0];
+          if (cfg) {
+            const cfgRows = parseInt(cfg['Hàng'], 10);
+            const cfgCols = parseInt(cfg['Cột'], 10);
+            const cfgType = parseInt(cfg['Loại bàn mặc định'], 10);
+            if (!isNaN(cfgRows)) rows = Math.max(rows, cfgRows);
+            if (!isNaN(cfgCols)) cols = Math.max(cols, cfgCols);
+            if (!isNaN(cfgType)) defaultTableType = asTableType(cfgType);
+          }
+        }
+
+        resolve({ students, rows: clampGridSize(rows), cols: clampGridSize(cols), tables, defaultTableType });
       } catch (err) {
         reject(err);
       }
@@ -208,8 +269,7 @@ export default function SeatingPage() {
 
   const handleStartExcel = async (file: File) => {
     try {
-      const students = await parseStudentsFromSheet(file);
-      setData(buildData(students));
+      setData(await parseSeatingFromSheet(file));
     } catch (err) {
       console.error(err);
       alert('Lỗi khi đọc file. Vui lòng kiểm tra lại định dạng Excel.');
@@ -222,8 +282,7 @@ export default function SeatingPage() {
     );
     if (!confirmed) return;
     try {
-      const students = await parseStudentsFromSheet(file);
-      setData(buildData(students));
+      setData(await parseSeatingFromSheet(file));
     } catch (err) {
       console.error(err);
       alert('Lỗi khi đọc file. Vui lòng kiểm tra lại định dạng Excel.');
@@ -510,23 +569,35 @@ export default function SeatingPage() {
 
   const handleDownloadExcel = () => {
     if (!data) return;
-    const studentByIndex = new Map<number, string>(data.students.map((s) => [s.index, s.name]));
-    const rows: { Hàng: number; Cột: number; 'Vị trí trong bàn': number; 'Tên học sinh': string }[] = [];
+    const seatByIndex = new Map<number, { key: string; seatIdx: number; type: TableType }>();
     Object.entries(data.tables).forEach(([key, table]) => {
-      const [r, c] = key.split('-').map(Number);
       table.studentIndexes.forEach((studentIndex, seatIdx) => {
-        rows.push({
-          Hàng: r + 1,
-          Cột: c + 1,
-          'Vị trí trong bàn': seatIdx + 1,
-          'Tên học sinh': studentByIndex.get(studentIndex) ?? '',
-        });
+        seatByIndex.set(studentIndex, { key, seatIdx, type: table.type });
       });
     });
-    rows.sort((a, b) => a.Hàng - b.Hàng || a.Cột - b.Cột || a['Vị trí trong bàn'] - b['Vị trí trong bàn']);
-    const ws = XLSX.utils.json_to_sheet(rows);
+
+    const rows = data.students
+      .map((s) => {
+        const seat = seatByIndex.get(s.index);
+        const [r, c] = seat ? seat.key.split('-').map(Number) : [undefined, undefined];
+        return {
+          STT: s.index,
+          'Tên học sinh': s.name,
+          Hàng: r !== undefined ? r + 1 : '',
+          Cột: c !== undefined ? c + 1 : '',
+          'Loại bàn': seat ? seat.type : '',
+          'Vị trí trong bàn': seat ? seat.seatIdx + 1 : '',
+        };
+      })
+      .sort((a, b) => a.STT - b.STT);
+
+    const wsMain = XLSX.utils.json_to_sheet(rows);
+    const wsConfig = XLSX.utils.json_to_sheet([
+      { Hàng: data.rows, Cột: data.cols, 'Loại bàn mặc định': data.defaultTableType },
+    ]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Chỗ ngồi');
+    XLSX.utils.book_append_sheet(wb, wsMain, SEATING_SHEET_NAME);
+    XLSX.utils.book_append_sheet(wb, wsConfig, CONFIG_SHEET_NAME);
     XLSX.writeFile(wb, 'danh-sach-cho-ngoi.xlsx');
   };
 
