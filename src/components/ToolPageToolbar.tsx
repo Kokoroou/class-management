@@ -6,6 +6,7 @@ interface ToolbarButtonAction {
   icon: ReactNode;
   title: string;
   variant?: 'button';
+  disabled?: boolean;
   onClick: () => void;
 }
 
@@ -60,7 +61,12 @@ export default function ToolPageToolbar({ groups, className = '' }: ToolPageTool
               <button
                 key={action.key}
                 onClick={action.onClick}
-                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                disabled={action.disabled}
+                className={`p-2 rounded transition-colors ${
+                  action.disabled
+                    ? 'text-slate-300 cursor-not-allowed'
+                    : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                }`}
                 title={action.title}
               >
                 {action.icon}

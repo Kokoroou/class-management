@@ -6,7 +6,10 @@ type SetValue<T> = T | ((prev: T) => T);
  * Lưu và tải dữ liệu của một trang vào localStorage theo key.
  * Dùng chung cho mọi trang tính năng thay vì tự viết logic đọc/ghi riêng.
  */
-export function useLocalStorage<T>(key: string, initialValue: T | (() => T)) {
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T | (() => T)
+): readonly [T, (next: SetValue<T>) => void, () => void] {
   const [value, setValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
