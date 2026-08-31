@@ -70,7 +70,23 @@ const buildData = (students: Student[]): SeatingData => {
 };
 
 const getSampleStudents = (): Student[] =>
-  [...Array(24)].map((_, i) => ({ index: i + 1, name: `Học sinh ${i + 1}` }));
+  [...Array(30)].map((_, i) => ({ index: i + 1, name: `Học sinh ${i + 1}` }));
+
+/** Mẫu: 3 bàn đôi/hàng x 5 hàng = 30 học sinh, xếp lần lượt vào từng bàn. */
+const buildTemplateData = (): SeatingData => {
+  const students = getSampleStudents();
+  const rows = 5;
+  const cols = 3;
+  const tables: Record<string, Table> = {};
+  let cursor = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      tables[`${r}-${c}`] = { type: 2, studentIndexes: students.slice(cursor, cursor + 2).map((s) => s.index) };
+      cursor += 2;
+    }
+  }
+  return { students, rows, cols, tables, defaultTableType: 2 };
+};
 
 const parseStudentsFromSheet = (file: File): Promise<Student[]> =>
   new Promise((resolve, reject) => {
@@ -188,7 +204,7 @@ export default function SeatingPage() {
   }, [isAddPopoverOpen]);
 
   const handleStartBlank = () => setData(buildData([]));
-  const handleStartTemplate = () => setData(buildData(getSampleStudents()));
+  const handleStartTemplate = () => setData(buildTemplateData());
 
   const handleStartExcel = async (file: File) => {
     try {
