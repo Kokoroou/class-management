@@ -12,7 +12,7 @@ interface ToolCard {
 
 const TOOLS: ToolCard[] = [
   {
-    title: 'Sơ đồ Hỗ trợ học tập',
+    title: 'Sơ đồ hỗ trợ học tập',
     description:
       'Dựng sơ đồ mạng lưới hỗ trợ trong lớp từ file Excel danh sách học sinh, chỉnh sửa trực quan và xuất lại kết quả.',
     path: '/support-tree',
