@@ -975,12 +975,16 @@ export default function SeatingPage() {
                           if (editingStudentId !== null && occupants.includes(editingStudentId)) return;
                           gridSelection.handleItemClick(key, e);
                         }}
-                        className={`flex gap-1 p-1.5 rounded-lg border transition-colors ${
+                        className={`relative flex gap-1 p-1.5 rounded-lg border transition-colors ${
                           table ? 'bg-slate-100 border-slate-300 cursor-grab' : 'bg-transparent border-dashed border-slate-200'
                         } ${isSelected ? '!border-blue-600 ring-2 ring-blue-200' : ''} ${
                           isTableDragOver ? '!border-emerald-500 ring-2 ring-emerald-200' : ''
                         }`}
                       >
+                        <div
+                          className="absolute top-0 left-1.5 right-1.5 h-1 rounded-b-sm bg-[#b8804f] pointer-events-none"
+                          title="Mặt bàn"
+                        />
                         {[...Array(type)].map((_, seatIdx) => {
                           const studentIndex = occupants[seatIdx];
                           const studentName = studentIndex !== undefined ? studentByIndex.get(studentIndex) : undefined;
