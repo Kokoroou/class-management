@@ -255,6 +255,8 @@ function MainCanvas() {
       setEdges(eds => eds.filter(e => !e.selected));
   }, [setNodes, setEdges]);
 
+  const canDelete = nodes.some(n => n.selected) || edges.some(e => e.selected);
+
   const parseExcelFile = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -465,19 +467,30 @@ function MainCanvas() {
         <Panel position="top-center" className="mt-4">
             <ToolPageToolbar
               groups={[
+                // Nhóm 1: thao tác với đơn/nhóm phần tử đang chọn
                 [
                   { key: 'add-node', icon: <Plus size={20} />, title: 'Thêm Node (Tự nối nếu đang chọn một Node khác)', onClick: onAddNode },
-                  { key: 'delete-selected', icon: <Trash2 size={20} />, title: 'Xóa Node hoặc Cạnh đang chọn (Phím Backspace)', onClick: deleteSelected },
+                  {
+                    key: 'delete-selected',
+                    icon: <Trash2 size={20} />,
+                    title: canDelete ? 'Xóa Node hoặc Cạnh đang chọn (Phím Backspace)' : 'Chọn Node hoặc Cạnh để xóa',
+                    disabled: !canDelete,
+                    danger: true,
+                    onClick: deleteSelected,
+                  },
                 ],
+                // Nhóm 2: thao tác với tất cả phần tử
                 [
                   { key: 'layout', icon: <LayoutTemplate size={20} />, title: 'Tự động sắp xếp lại cây', onClick: onLayout },
                 ],
+                // Nhóm 3: tải xuống
                 [
                   { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Lưu sơ đồ (PNG)', onClick: onDownloadPNG },
                   { key: 'export-excel', icon: <FileSpreadsheet size={20} />, title: 'Lưu danh sách (Excel)', onClick: handleDownloadExcel },
                 ],
+                // Nhóm 4: tải lên
                 [
-                  { key: 'upload-excel', icon: <Upload size={20} />, title: 'Tải lên file Excel khác', variant: 'upload', accept: '.xlsx, .xls, .csv', onFileSelect: parseExcelFile },
+                  { key: 'upload-excel', icon: <Upload size={20} />, title: 'Tải lên file Excel khác (thay thế toàn bộ sơ đồ hiện tại)', variant: 'upload', accept: '.xlsx, .xls, .csv', danger: true, onFileSelect: parseExcelFile },
                 ],
               ]}
             />

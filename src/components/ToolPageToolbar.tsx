@@ -7,6 +7,8 @@ interface ToolbarButtonAction {
   title: string;
   variant?: 'button';
   disabled?: boolean;
+  /** Đánh dấu hành động phá hủy dữ liệu (xóa, thay thế toàn bộ, ...) để tô màu cảnh báo. */
+  danger?: boolean;
   onClick: () => void;
 }
 
@@ -16,6 +18,8 @@ interface ToolbarUploadAction {
   title: string;
   variant: 'upload';
   accept?: string;
+  /** Đánh dấu hành động phá hủy dữ liệu (xóa, thay thế toàn bộ, ...) để tô màu cảnh báo. */
+  danger?: boolean;
   onFileSelect: (file: File) => void;
 }
 
@@ -42,7 +46,11 @@ export default function ToolPageToolbar({ groups, className = '' }: ToolPageTool
             action.variant === 'upload' ? (
               <label
                 key={action.key}
-                className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                className={`p-2 rounded transition-colors cursor-pointer ${
+                  action.danger
+                    ? 'text-red-500 hover:text-red-600 hover:bg-red-50'
+                    : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                }`}
                 title={action.title}
                 aria-label={action.title}
               >
@@ -67,7 +75,9 @@ export default function ToolPageToolbar({ groups, className = '' }: ToolPageTool
                 className={`p-2 rounded transition-colors ${
                   action.disabled
                     ? 'text-slate-300 cursor-not-allowed'
-                    : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                    : action.danger
+                      ? 'text-red-500 hover:text-red-600 hover:bg-red-50'
+                      : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
                 }`}
                 title={action.title}
                 aria-label={action.title}

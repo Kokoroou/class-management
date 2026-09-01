@@ -4,15 +4,17 @@ import * as XLSX from 'xlsx';
 import {
   Columns3,
   FileSpreadsheet,
-  FileUp,
   Image as ImageIcon,
   LayoutGrid,
   Merge,
+  PanelRightClose,
+  PanelRightOpen,
   Plus,
   Rows3,
   Shuffle,
   Split,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
@@ -269,6 +271,7 @@ export default function SeatingPage() {
   const [data, setData] = useLocalStorage<SeatingData | null>(STORAGE_KEY, null);
   const [newStudentName, setNewStudentName] = useState('');
   const [isAddPopoverOpen, setIsAddPopoverOpen] = useState(false);
+  const [isConfigSidebarOpen, setIsConfigSidebarOpen] = useState(true);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [dragOverTableKey, setDragOverTableKey] = useState<string | null>(null);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
@@ -764,62 +767,85 @@ export default function SeatingPage() {
   const canShuffle = shuffleScopeCount >= 2;
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 bg-white border-b border-slate-200 px-4 py-2 flex items-center gap-3 flex-wrap relative">
-        <div className="flex items-center gap-1.5 text-sm text-slate-600">
-          <Rows3 size={16} />
-          <span>Hàng</span>
-          <input
-            type="number"
-            min={1}
-            max={MAX_GRID_SIZE}
-            value={data.rows}
-            onChange={(e) => handleSetRows(Number(e.target.value))}
-            className="w-14 px-1.5 py-1 border border-slate-200 rounded-md text-sm outline-none focus:border-blue-400"
-          />
+    <div className="w-full h-full flex overflow-hidden">
+      <aside
+        ref={poolContainerRef}
+        className="relative w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDropOnPool}
+        onMouseDown={poolMarquee.onMouseDown}
+      >
+        <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-200">
+          Chưa xếp chỗ ({unassignedStudents.length})
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-slate-600">
-          <Columns3 size={16} />
-          <span>Cột</span>
-          <input
-            type="number"
-            min={1}
-            max={MAX_GRID_SIZE}
-            value={data.cols}
-            onChange={(e) => handleSetCols(Number(e.target.value))}
-            className="w-14 px-1.5 py-1 border border-slate-200 rounded-md text-sm outline-none focus:border-blue-400"
-          />
-        </div>
-        <div className="flex items-center gap-1.5 text-sm text-slate-600">
-          <span>Loại bàn mặc định</span>
-          <div className="flex border border-slate-200 rounded-md overflow-hidden">
-            {TABLE_TYPES.map((t) => (
-              <button
-                key={t}
-                onClick={() => handleSetDefaultTableType(t)}
-                className={`px-2 py-1 text-xs font-semibold transition-colors ${
-                  data.defaultTableType === t ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
-                } ${t > 1 ? 'border-l border-slate-200' : ''}`}
-                title={`Bàn ${t} học sinh`}
+        <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1.5">
+          {unassignedStudents.length === 0 && (
+            <p className="text-xs text-slate-400 italic">Không còn học sinh nào chưa xếp chỗ.</p>
+          )}
+          {unassignedStudents.map((s) => {
+            const isSelected = poolSelection.isSelected(s.index);
+            const isEditing = editingStudentId === s.index;
+            return (
+              <div
+                key={s.index}
+                draggable={!isEditing}
+                onDragStart={(e) => handleDragStart(e, s.index)}
+                onClick={(e: ReactMouseEvent) => {
+                  if (isEditing) return;
+                  poolSelection.handleItemClick(s.index, e);
+                }}
+                onDoubleClick={() => startEditingStudent(s.index, s.name)}
+                data-marquee-id={String(s.index)}
+                className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 border rounded-md text-sm cursor-grab select-none transition-colors ${
+                  isSelected
+                    ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-200 text-slate-900'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-blue-300'
+                }`}
               >
-                {t}
-              </button>
-            ))}
-          </div>
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    value={s.name}
+                    onChange={(e) => updateStudentName(s.index, e.target.value)}
+                    onBlur={commitEditingStudent}
+                    onKeyDown={handleNameEditKeyDown(s.index)}
+                    className="flex-1 min-w-0 outline-none bg-white border border-blue-300 rounded px-1 text-sm"
+                  />
+                ) : (
+                  <span className="truncate">{s.name}</span>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveStudent(s.index);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity shrink-0"
+                  title="Xóa học sinh"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            );
+          })}
         </div>
-        <div className="flex-1" />
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+        {poolMarquee.marqueeRect && (
+          <div
+            className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
+            style={{
+              left: poolMarquee.marqueeRect.left,
+              top: poolMarquee.marqueeRect.top,
+              width: poolMarquee.marqueeRect.width,
+              height: poolMarquee.marqueeRect.height,
+            }}
+          />
+        )}
+      </aside>
+
+      <div className="relative flex-1 overflow-hidden">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
           <ToolPageToolbar
             groups={[
-              [
-                { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Lưu sơ đồ (PNG)', onClick: handleDownloadPNG },
-                {
-                  key: 'export-excel',
-                  icon: <FileSpreadsheet size={20} />,
-                  title: 'Lưu danh sách chỗ ngồi (Excel)',
-                  onClick: handleDownloadExcel,
-                },
-              ],
+              // Nhóm 1: thao tác với đơn/nhóm phần tử đang chọn
               [
                 {
                   key: 'add-student',
@@ -842,6 +868,17 @@ export default function SeatingPage() {
                   onClick: handleSplitSelected,
                 },
                 {
+                  key: 'delete-selected',
+                  icon: <Trash2 size={20} />,
+                  title: 'Xóa mục đã chọn',
+                  disabled: !canDelete,
+                  danger: true,
+                  onClick: handleDeleteSelected,
+                },
+              ],
+              // Nhóm 2: thao tác với tất cả phần tử
+              [
+                {
                   key: 'shuffle-seats',
                   icon: <Shuffle size={20} />,
                   title: hasGridSelection
@@ -850,18 +887,25 @@ export default function SeatingPage() {
                   disabled: !canShuffle,
                   onClick: handleShuffleSeats,
                 },
+              ],
+              // Nhóm 3: tải xuống
+              [
+                { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Lưu sơ đồ (PNG)', onClick: handleDownloadPNG },
                 {
-                  key: 'delete-selected',
-                  icon: <Trash2 size={20} />,
-                  title: 'Xóa mục đã chọn',
-                  disabled: !canDelete,
-                  onClick: handleDeleteSelected,
+                  key: 'export-excel',
+                  icon: <FileSpreadsheet size={20} />,
+                  title: 'Lưu danh sách chỗ ngồi (Excel)',
+                  onClick: handleDownloadExcel,
                 },
+              ],
+              // Nhóm 4: tải lên
+              [
                 {
                   key: 'upload-another',
-                  icon: <FileUp size={20} />,
-                  title: 'Tải file Excel khác lên',
+                  icon: <Upload size={20} />,
+                  title: 'Tải file Excel khác lên (thay thế toàn bộ dữ liệu hiện tại)',
                   variant: 'upload',
+                  danger: true,
                   onFileSelect: handleReplaceExcel,
                 },
               ],
@@ -894,87 +938,15 @@ export default function SeatingPage() {
             </div>
           )}
         </div>
-        <ResetButton onClick={resetTool} />
-      </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        <aside
-          ref={poolContainerRef}
-          className="relative w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDropOnPool}
-          onMouseDown={poolMarquee.onMouseDown}
-        >
-          <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-200">
-            Chưa xếp chỗ ({unassignedStudents.length})
-          </div>
-          <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1.5">
-            {unassignedStudents.length === 0 && (
-              <p className="text-xs text-slate-400 italic">Không còn học sinh nào chưa xếp chỗ.</p>
-            )}
-            {unassignedStudents.map((s) => {
-              const isSelected = poolSelection.isSelected(s.index);
-              const isEditing = editingStudentId === s.index;
-              return (
-                <div
-                  key={s.index}
-                  draggable={!isEditing}
-                  onDragStart={(e) => handleDragStart(e, s.index)}
-                  onClick={(e: ReactMouseEvent) => {
-                    if (isEditing) return;
-                    poolSelection.handleItemClick(s.index, e);
-                  }}
-                  onDoubleClick={() => startEditingStudent(s.index, s.name)}
-                  data-marquee-id={String(s.index)}
-                  className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 border rounded-md text-sm cursor-grab select-none transition-colors ${
-                    isSelected
-                      ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-200 text-slate-900'
-                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-blue-300'
-                  }`}
-                >
-                  {isEditing ? (
-                    <input
-                      autoFocus
-                      value={s.name}
-                      onChange={(e) => updateStudentName(s.index, e.target.value)}
-                      onBlur={commitEditingStudent}
-                      onKeyDown={handleNameEditKeyDown(s.index)}
-                      className="flex-1 min-w-0 outline-none bg-white border border-blue-300 rounded px-1 text-sm"
-                    />
-                  ) : (
-                    <span className="truncate">{s.name}</span>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveStudent(s.index);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity shrink-0"
-                    title="Xóa học sinh"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          {poolMarquee.marqueeRect && (
-            <div
-              className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
-              style={{
-                left: poolMarquee.marqueeRect.left,
-                top: poolMarquee.marqueeRect.top,
-                width: poolMarquee.marqueeRect.width,
-                height: poolMarquee.marqueeRect.height,
-              }}
-            />
-          )}
-        </aside>
+        <div className="absolute top-4 right-4 z-20">
+          <ResetButton onClick={resetTool} />
+        </div>
 
         <div
           ref={gridContainerRef}
           onMouseDown={gridMarquee.onMouseDown}
-          className="relative flex-1 overflow-auto p-8 flex justify-center"
+          className="absolute inset-0 overflow-auto p-8 flex justify-center"
         >
           <div
             ref={captureRef}
@@ -1104,6 +1076,76 @@ export default function SeatingPage() {
           )}
         </div>
       </div>
+
+      <aside
+        className="shrink-0 bg-white border-l border-slate-200 flex flex-col overflow-hidden transition-[width] duration-150"
+        style={{ width: isConfigSidebarOpen ? 224 : 44 }}
+      >
+        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 gap-2">
+          {isConfigSidebarOpen && (
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
+              Cấu hình sơ đồ
+            </span>
+          )}
+          <button
+            onClick={() => setIsConfigSidebarOpen((open) => !open)}
+            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded shrink-0"
+            title={isConfigSidebarOpen ? 'Thu gọn cấu hình' : 'Mở rộng cấu hình'}
+          >
+            {isConfigSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+          </button>
+        </div>
+
+        {isConfigSidebarOpen && (
+          <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1.5 text-sm text-slate-600">
+                <Rows3 size={16} />
+                <span>Hàng</span>
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={MAX_GRID_SIZE}
+                value={data.rows}
+                onChange={(e) => handleSetRows(Number(e.target.value))}
+                className="w-full px-1.5 py-1 border border-slate-200 rounded-md text-sm outline-none focus:border-blue-400"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1.5 text-sm text-slate-600">
+                <Columns3 size={16} />
+                <span>Cột</span>
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={MAX_GRID_SIZE}
+                value={data.cols}
+                onChange={(e) => handleSetCols(Number(e.target.value))}
+                className="w-full px-1.5 py-1 border border-slate-200 rounded-md text-sm outline-none focus:border-blue-400"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm text-slate-600">Loại bàn mặc định</span>
+              <div className="flex border border-slate-200 rounded-md overflow-hidden">
+                {TABLE_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => handleSetDefaultTableType(t)}
+                    className={`flex-1 py-1 text-xs font-semibold transition-colors ${
+                      data.defaultTableType === t ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                    } ${t > 1 ? 'border-l border-slate-200' : ''}`}
+                    title={`Bàn ${t} học sinh`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
     </div>
   );
 }

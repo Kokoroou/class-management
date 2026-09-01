@@ -325,6 +325,19 @@ function MainTable() {
             <ToolPageToolbar
               className="absolute left-1/2 -translate-x-1/2"
               groups={[
+                // Nhóm 1: thao tác với đơn/nhóm phần tử đang chọn
+                [
+                  { key: 'add-student', icon: <Plus size={20} />, title: 'Thêm học sinh', onClick: addStudent },
+                  {
+                    key: 'delete-selected',
+                    icon: <Trash2 size={20} />,
+                    title: canDelete ? 'Xóa mục đã chọn' : 'Chọn học sinh để xóa',
+                    disabled: !canDelete,
+                    danger: true,
+                    onClick: handleDeleteSelected,
+                  },
+                ],
+                // Nhóm 3: tải xuống (không có thao tác nào áp dụng cho toàn bộ danh sách trên trang này)
                 [
                   { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Trích xuất PNG', onClick: handleDownloadPNG },
                   {
@@ -334,21 +347,15 @@ function MainTable() {
                     onClick: handleDownloadExcel,
                   },
                 ],
+                // Nhóm 4: tải lên
                 [
-                  { key: 'add-student', icon: <Plus size={20} />, title: 'Thêm học sinh', onClick: addStudent },
-                  {
-                    key: 'delete-selected',
-                    icon: <Trash2 size={20} />,
-                    title: canDelete ? 'Xóa mục đã chọn' : 'Chọn học sinh để xóa',
-                    disabled: !canDelete,
-                    onClick: handleDeleteSelected,
-                  },
                   {
                     key: 'upload-excel',
                     icon: <Upload size={20} />,
-                    title: 'Tải lên Excel',
+                    title: 'Tải lên Excel (thay thế toàn bộ danh sách hiện tại)',
                     variant: 'upload',
                     accept: '.xlsx, .xls, .csv',
+                    danger: true,
                     onFileSelect: importExcel,
                   },
                 ],
