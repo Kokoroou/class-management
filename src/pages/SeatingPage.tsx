@@ -10,6 +10,7 @@ import {
   Merge,
   Plus,
   Rows3,
+  Shuffle,
   Split,
   Trash2,
   X,
@@ -198,6 +199,13 @@ const parseSeatingFromSheet = (file: File): Promise<SeatingData> =>
     reader.readAsBinaryString(file);
   });
 
+/** Tổng sức chứa của sơ đồ: bàn đã đặt tính theo loại bàn, ô trống tính theo loại bàn mặc định. */
+const computeTotalCapacity = (data: SeatingData): number => {
+  const placedCapacity = Object.values(data.tables).reduce((sum, t) => sum + t.type, 0);
+  const emptyCellCount = data.rows * data.cols - Object.keys(data.tables).length;
+  return placedCapacity + emptyCellCount * data.defaultTableType;
+};
+
 const compareKeys = (a: string, b: string) => {
   const [ar, ac] = a.split('-').map(Number);
   const [br, bc] = b.split('-').map(Number);
@@ -330,12 +338,16 @@ export default function SeatingPage() {
 
   const handleAddStudent = () => {
     const name = newStudentName.trim();
-    if (!name) return;
+    if (!name || !data) return;
+    const overCapacity = data.students.length + 1 > computeTotalCapacity(data);
     setData((prev) => {
       if (!prev) return prev;
       const nextIndex = prev.students.reduce((max, s) => Math.max(max, s.index), 0) + 1;
       return { ...prev, students: [...prev.students, { index: nextIndex, name }] };
     });
+    if (overCapacity) {
+      alert('Sĩ số lớp hiện đã vượt quá sức chứa của sơ đồ chỗ ngồi. Học sinh mới vẫn được thêm vào danh sách chờ.');
+    }
     setNewStudentName('');
     addInputRef.current?.focus();
   };
@@ -606,34 +618,52 @@ export default function SeatingPage() {
       if (!table || table.studentIndexes.length < 2) return prev;
 
       const tables = { ...prev.tables };
-      let rows = prev.rows;
-      const cols = prev.cols;
+      let cols = prev.cols;
       const [startR, startC] = key.split('-').map(Number);
 
       tables[key] = { type: 1, studentIndexes: [table.studentIndexes[0]] };
 
-      let r = startR;
+      // Các bàn đơn mới phải ở lại đúng hàng của bàn gốc (chỉ mở rộng thêm cột nếu cần),
+      // không được đẩy sang hàng khác.
       let c = startC + 1;
       table.studentIndexes.slice(1).forEach((studentIndex) => {
-        while (true) {
-          if (c >= cols) {
-            c = 0;
-            r += 1;
-          }
-          if (r >= rows) rows += 1;
-          const candidateKey = `${r}-${c}`;
-          if (!tables[candidateKey]) {
-            tables[candidateKey] = { type: 1, studentIndexes: [studentIndex] };
-            c += 1;
-            break;
-          }
-          c += 1;
-        }
+        while (tables[`${startR}-${c}`]) c += 1;
+        if (c >= cols) cols = clampGridSize(c + 1);
+        tables[`${startR}-${c}`] = { type: 1, studentIndexes: [studentIndex] };
+        c += 1;
       });
 
-      return { ...prev, rows, tables };
+      return { ...prev, cols, tables };
     });
     gridSelection.clear();
+  };
+
+  const handleShuffleSeats = () => {
+    setData((prev) => {
+      if (!prev) return prev;
+      const selectedKeys = [...gridSelection.selectedIds].filter((k) => prev.tables[k]);
+      const scopeKeys = selectedKeys.length > 0 ? selectedKeys : Object.keys(prev.tables);
+
+      const studentIds = scopeKeys.flatMap((key) => prev.tables[key].studentIndexes);
+      if (studentIds.length < 2) return prev;
+
+      const shuffled = [...studentIds];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      const tables = { ...prev.tables };
+      let cursor = 0;
+      scopeKeys.forEach((key) => {
+        const table = tables[key];
+        const count = table.studentIndexes.length;
+        tables[key] = { ...table, studentIndexes: shuffled.slice(cursor, cursor + count) };
+        cursor += count;
+      });
+
+      return { ...prev, tables };
+    });
   };
 
   const handleDeleteSelected = () => {
@@ -726,6 +756,13 @@ export default function SeatingPage() {
   const canSplit = !!singleSelectedTable && singleSelectedTable.studentIndexes.length >= 2;
   const canDelete = gridSelection.selectedIds.size > 0 || poolSelection.selectedIds.size > 0;
 
+  const hasGridSelection = gridSelection.selectedIds.size > 0;
+  const shuffleScopeKeys = hasGridSelection
+    ? [...gridSelection.selectedIds].filter((k) => data.tables[k])
+    : Object.keys(data.tables);
+  const shuffleScopeCount = shuffleScopeKeys.reduce((sum, k) => sum + data.tables[k].studentIndexes.length, 0);
+  const canShuffle = shuffleScopeCount >= 2;
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       <div className="shrink-0 bg-white border-b border-slate-200 px-4 py-2 flex items-center gap-3 flex-wrap relative">
@@ -803,6 +840,15 @@ export default function SeatingPage() {
                   title: canSplit ? 'Tách thành các bàn đơn' : 'Chọn 1 bàn có từ 2 học sinh trở lên để tách',
                   disabled: !canSplit,
                   onClick: handleSplitSelected,
+                },
+                {
+                  key: 'shuffle-seats',
+                  icon: <Shuffle size={20} />,
+                  title: hasGridSelection
+                    ? 'Đổi chỗ ngẫu nhiên trong phạm vi bàn đã chọn'
+                    : 'Đổi chỗ ngẫu nhiên toàn bộ học sinh đang ngồi',
+                  disabled: !canShuffle,
+                  onClick: handleShuffleSeats,
                 },
                 {
                   key: 'delete-selected',
