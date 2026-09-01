@@ -285,7 +285,12 @@ function MainTable() {
   }
 
   return (
-    <div className="w-full h-full overflow-y-auto px-4 py-6">
+    <div
+      className="w-full h-full overflow-y-auto px-4 py-6"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) rowSelection.clear();
+      }}
+    >
       <div className="w-full">
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap relative">
           <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent, KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import * as XLSX from 'xlsx';
 import {
@@ -237,18 +237,30 @@ export default function SeatingPage() {
   const addInputRef = useRef<HTMLInputElement>(null);
   const addPopoverRef = useRef<HTMLDivElement>(null);
 
+  /** Marquee của lưới dùng chung DOM node với vùng chụp ảnh (captureRef), để
+   * vùng trống quanh nhãn "BẢNG" cũng được tính là nền khi bấm để bỏ chọn. */
+  const setGridCaptureRef = useCallback((node: HTMLDivElement | null) => {
+    captureRef.current = node;
+    gridContainerRef.current = node;
+  }, []);
+
   const poolSelection = useSelection<number>();
   const gridSelection = useSelection<string>();
+
+  const clearAllSelections = () => {
+    poolSelection.clear();
+    gridSelection.clear();
+  };
 
   const poolMarquee = useMarqueeSelection({
     containerRef: poolContainerRef,
     onSelect: (ids, additive) => poolSelection.selectMany(ids.map(Number), additive),
-    onBackgroundClick: poolSelection.clear,
+    onBackgroundClick: clearAllSelections,
   });
   const gridMarquee = useMarqueeSelection({
     containerRef: gridContainerRef,
     onSelect: (ids, additive) => gridSelection.selectMany(ids, additive),
-    onBackgroundClick: gridSelection.clear,
+    onBackgroundClick: clearAllSelections,
   });
 
   const resetTool = useResetTool(STORAGE_KEY, () => setData(null));
@@ -832,15 +844,15 @@ export default function SeatingPage() {
         </aside>
 
         <div className="flex-1 overflow-auto p-8 flex justify-center">
-          <div ref={captureRef} className="inline-flex flex-col items-center gap-4 bg-slate-50 p-6 rounded-xl h-fit">
+          <div
+            ref={setGridCaptureRef}
+            onMouseDown={gridMarquee.onMouseDown}
+            className="relative inline-flex flex-col items-center gap-4 bg-slate-50 p-6 rounded-xl h-fit"
+          >
             <div className="px-8 py-2 bg-slate-800 text-white text-xs font-semibold tracking-widest rounded-md">
               BẢNG
             </div>
-            <div
-              ref={gridContainerRef}
-              className="relative flex flex-col gap-3"
-              onMouseDown={gridMarquee.onMouseDown}
-            >
+            <div className="flex flex-col gap-3">
               {[...Array(data.rows)].map((_, r) => (
                 <div key={r} className="flex gap-3">
                   {[...Array(data.cols)].map((_, c) => {
@@ -926,18 +938,18 @@ export default function SeatingPage() {
                   })}
                 </div>
               ))}
-              {gridMarquee.marqueeRect && (
-                <div
-                  className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
-                  style={{
-                    left: gridMarquee.marqueeRect.left,
-                    top: gridMarquee.marqueeRect.top,
-                    width: gridMarquee.marqueeRect.width,
-                    height: gridMarquee.marqueeRect.height,
-                  }}
-                />
-              )}
             </div>
+            {gridMarquee.marqueeRect && (
+              <div
+                className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
+                style={{
+                  left: gridMarquee.marqueeRect.left,
+                  top: gridMarquee.marqueeRect.top,
+                  width: gridMarquee.marqueeRect.width,
+                  height: gridMarquee.marqueeRect.height,
+                }}
+              />
+            )}
           </div>
         </div>
       </div>

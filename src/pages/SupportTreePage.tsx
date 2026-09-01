@@ -93,6 +93,9 @@ const getSampleStudents = (): SampleStudent[] =>
 const nodeWidth = 140;
 const nodeHeight = 65;
 
+const EDGE_STYLE = { stroke: '#cbd5e1', strokeWidth: 2 };
+const EDGE_STYLE_SELECTED = { stroke: '#2563eb', strokeWidth: 3 };
+
 const CustomNode = ({ data, id, selected }: any) => {
   const { updateNodeData } = useReactFlow();
   const [isEditing, setIsEditing] = useState(false);
@@ -183,12 +186,19 @@ function MainCanvas() {
 
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
+  // Cạnh đang chọn đổi màu/độ dày; edge.selected được @xyflow/react tự cập nhật
+  // qua onEdgesChange khi click, dùng chung cơ chế "đang được chọn" với node.
+  const displayEdges = useMemo(
+    () => edges.map((e) => ({ ...e, style: e.selected ? EDGE_STYLE_SELECTED : EDGE_STYLE })),
+    [edges]
+  );
+
   useEffect(() => {
     setSavedDiagram(nodes.length === 0 ? null : { nodes, edges });
   }, [nodes, edges, setSavedDiagram]);
 
   const onConnect = useCallback((params: Connection) => {
-      setEdges((eds) => addEdge({ ...params, type: 'straight', style: { stroke: '#cbd5e1', strokeWidth: 2 } }, eds));
+      setEdges((eds) => addEdge({ ...params, type: 'straight', style: EDGE_STYLE }, eds));
   }, [setEdges]);
 
   const onLayout = useCallback(() => {
@@ -226,7 +236,7 @@ function MainCanvas() {
               source: selectedNode.id,
               target: newId,
               type: 'straight',
-              style: { stroke: '#cbd5e1', strokeWidth: 2 }
+              style: EDGE_STYLE
           };
           setNodes(nds => [...nds.map(n => ({...n, selected: false})), newNode]);
           setEdges(eds => [...eds, newEdge]);
@@ -316,7 +326,7 @@ function MainCanvas() {
                     source: String(s.parentId),
                     target: String(s.index),
                     type: 'straight',
-                    style: { stroke: '#cbd5e1', strokeWidth: 2 }
+                    style: EDGE_STYLE
                 });
             }
         });
@@ -351,7 +361,7 @@ function MainCanvas() {
           source: String(s.parentId),
           target: String(s.index),
           type: 'straight',
-          style: { stroke: '#cbd5e1', strokeWidth: 2 }
+          style: EDGE_STYLE
         });
       }
     });
@@ -438,7 +448,7 @@ function MainCanvas() {
     <div className="w-full h-full relative" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={displayEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
