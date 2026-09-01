@@ -117,3 +117,34 @@ export const calcNameNumber = (name: string): number | null => {
   if (sum === 0) return null;
   return reduceNumber(sum);
 };
+
+/** Số sứ mệnh (Expression/Destiny Number): cùng công thức với Số tên, tính trên toàn bộ họ tên. */
+export const calcExpressionNumber = calcNameNumber;
+
+const VOWELS = new Set(['a', 'e', 'i', 'o', 'u']);
+
+const sumLetterValues = (letters: string): number =>
+  letters.split('').reduce((acc, ch) => acc + (LETTER_VALUES[ch] ?? 0), 0);
+
+/** Số linh hồn (Soul Urge Number): tổng giá trị các nguyên âm trong họ tên, rút gọn giữ số chủ. */
+export const calcSoulUrgeNumber = (name: string): number | null => {
+  const normalized = stripDiacritics(name).toLowerCase().replace(/[^a-z]/g, '');
+  const vowels = normalized.split('').filter((ch) => VOWELS.has(ch)).join('');
+  if (!vowels) return null;
+  return reduceNumber(sumLetterValues(vowels));
+};
+
+/** Số nhân cách (Personality Number): tổng giá trị các phụ âm trong họ tên, rút gọn giữ số chủ. */
+export const calcPersonalityNumber = (name: string): number | null => {
+  const normalized = stripDiacritics(name).toLowerCase().replace(/[^a-z]/g, '');
+  const consonants = normalized.split('').filter((ch) => !VOWELS.has(ch)).join('');
+  if (!consonants) return null;
+  return reduceNumber(sumLetterValues(consonants));
+};
+
+/** Số ngày sinh (Birth Day Number): rút gọn riêng ngày sinh trong tháng, giữ số chủ 11/22. */
+export const calcBirthDayNumber = (birthDate: string): number | null => {
+  const parsed = parseBirthDate(birthDate);
+  if (!parsed) return null;
+  return reduceNumber(parsed.day);
+};

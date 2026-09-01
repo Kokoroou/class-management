@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import * as XLSX from 'xlsx';
 import {
@@ -20,6 +20,7 @@ import { useSelection } from '../hooks/useSelection';
 import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
 import ToolPageToolbar from '../components/ToolPageToolbar';
+import NumerologyDetailSidebar from '../components/NumerologyDetailSidebar';
 import {
   NUMBER_MEANINGS,
   calcLifePathNumber,
@@ -144,6 +145,19 @@ function MainTable() {
   const [editingCell, setEditingCell] = useState<{ id: string; field: 'name' | 'birthDate' } | null>(null);
   const editingOriginalRef = useRef('');
   const captureRef = useRef<HTMLDivElement>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detailSidebarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!detailId) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      if (detailSidebarRef.current && !detailSidebarRef.current.contains(e.target as Node)) {
+        setDetailId(null);
+      }
+    };
+    window.addEventListener('mousedown', handlePointerDown);
+    return () => window.removeEventListener('mousedown', handlePointerDown);
+  }, [detailId]);
 
   const rows = useMemo(
     () =>
@@ -222,6 +236,7 @@ function MainTable() {
 
   const handleDeleteSelected = () => {
     setStudents((prev) => prev.filter((s) => !rowSelection.selectedIds.has(s.id)));
+    if (detailId && rowSelection.selectedIds.has(detailId)) setDetailId(null);
     rowSelection.clear();
   };
 
@@ -263,6 +278,7 @@ function MainTable() {
 
   const resetTool = useResetTool(STORAGE_KEY, () => setStudents([]));
   const canDelete = rowSelection.selectedIds.size > 0;
+  const detailStudent = detailId ? students.find((s) => s.id === detailId) ?? null : null;
 
   if (students.length === 0) {
     return (
@@ -378,12 +394,19 @@ function MainTable() {
                   <tr
                     key={row.id}
                     onClick={(e) => rowSelection.handleItemClick(row.id, e, displayRows.map((r) => r.id))}
+                    onDoubleClick={() => setDetailId(row.id)}
                     className={`border-b border-slate-100 last:border-0 cursor-default transition-colors ${
                       isRowSelected ? 'bg-blue-50 hover:bg-blue-50' : 'hover:bg-slate-50/60'
                     }`}
                   >
                     <td className="px-4 py-2 text-slate-500 align-top">{i + 1}</td>
-                    <td className="px-4 py-2 align-top" onDoubleClick={() => startEditingCell(row.id, 'name', row.name)}>
+                    <td
+                      className="px-4 py-2 align-top"
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        startEditingCell(row.id, 'name', row.name);
+                      }}
+                    >
                       {isEditingName ? (
                         <input
                           autoFocus
@@ -400,7 +423,10 @@ function MainTable() {
                     </td>
                     <td
                       className="px-4 py-2 align-top"
-                      onDoubleClick={() => startEditingCell(row.id, 'birthDate', row.birthDate)}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        startEditingCell(row.id, 'birthDate', row.birthDate);
+                      }}
                     >
                       {isEditingBirthDate ? (
                         <input
@@ -429,6 +455,10 @@ function MainTable() {
           </table>
         </div>
       </div>
+
+      {detailStudent && (
+        <NumerologyDetailSidebar ref={detailSidebarRef} student={detailStudent} onClose={() => setDetailId(null)} />
+      )}
     </div>
   );
 }
