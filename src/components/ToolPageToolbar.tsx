@@ -44,6 +44,7 @@ export default function ToolPageToolbar({ groups, className = '' }: ToolPageTool
                 key={action.key}
                 className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
                 title={action.title}
+                aria-label={action.title}
               >
                 {action.icon}
                 <input
@@ -60,6 +61,7 @@ export default function ToolPageToolbar({ groups, className = '' }: ToolPageTool
             ) : (
               <button
                 key={action.key}
+                type="button"
                 onClick={action.onClick}
                 disabled={action.disabled}
                 className={`p-2 rounded transition-colors ${
@@ -68,6 +70,7 @@ export default function ToolPageToolbar({ groups, className = '' }: ToolPageTool
                     : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
                 }`}
                 title={action.title}
+                aria-label={action.title}
               >
                 {action.icon}
               </button>
