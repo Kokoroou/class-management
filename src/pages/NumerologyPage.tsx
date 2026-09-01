@@ -220,10 +220,6 @@ function MainTable() {
     setStudents((prev) => [...prev, { id: makeId(), name: '', birthDate: '' }]);
   };
 
-  const removeStudent = (id: string) => {
-    setStudents((prev) => prev.filter((s) => s.id !== id));
-  };
-
   const handleDeleteSelected = () => {
     setStudents((prev) => prev.filter((s) => !rowSelection.selectedIds.has(s.id)));
     rowSelection.clear();
@@ -371,7 +367,6 @@ function MainTable() {
                     Số tên {sortIcon('nameNumber')}
                   </button>
                 </th>
-                <th className="px-2 py-2.5 w-10" />
               </tr>
             </thead>
             <tbody>
@@ -382,7 +377,7 @@ function MainTable() {
                 return (
                   <tr
                     key={row.id}
-                    onClick={() => rowSelection.selectOnly(row.id)}
+                    onClick={(e) => rowSelection.handleItemClick(row.id, e, displayRows.map((r) => r.id))}
                     className={`border-b border-slate-100 last:border-0 cursor-default transition-colors ${
                       isRowSelected ? 'bg-blue-50 hover:bg-blue-50' : 'hover:bg-slate-50/60'
                     }`}
@@ -426,18 +421,6 @@ function MainTable() {
                     </td>
                     <td className="px-4 py-2 align-top">
                       <NumberBadge value={row.nameNumber} />
-                    </td>
-                    <td className="px-2 py-2 align-top">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeStudent(row.id);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="Xóa học sinh"
-                      >
-                        <Trash2 size={15} />
-                      </button>
                     </td>
                   </tr>
                 );
