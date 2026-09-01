@@ -105,8 +105,8 @@ export function useMarqueeSelection({
         const hitIds: string[] = [];
         items.forEach((el) => {
           const rect = el.getBoundingClientRect();
-          const intersects = rect.left < x2 && rect.right > x1 && rect.top < y2 && rect.bottom > y1;
-          if (intersects) {
+          const contained = rect.left >= x1 && rect.right <= x2 && rect.top >= y1 && rect.bottom <= y2;
+          if (contained) {
             const id = el.getAttribute(itemAttribute);
             if (id) hitIds.push(id);
           }

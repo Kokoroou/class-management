@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { DragEvent, KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import * as XLSX from 'xlsx';
 import {
@@ -222,6 +222,39 @@ const findSeat = (tables: Record<string, Table>, studentIndex: number): { key: s
   return null;
 };
 
+/**
+ * Liệt kê các chỗ trống theo thứ tự đọc (trái->phải, trên->dưới), bắt đầu từ
+ * (startKey, startSeatIdx) - dùng để lấp lần lượt nhiều học sinh được thả cùng lúc.
+ */
+const collectEmptySeatsFrom = (
+  tables: Record<string, Table>,
+  rows: number,
+  cols: number,
+  defaultType: TableType,
+  startKey: string,
+  startSeatIdx: number
+): { key: string; seatIdx: number }[] => {
+  const slots: { key: string; seatIdx: number }[] = [];
+  let started = false;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const key = `${r}-${c}`;
+      const table = tables[key];
+      const type = table?.type ?? defaultType;
+      const occupantCount = table?.studentIndexes.length ?? 0;
+      for (let seatIdx = 0; seatIdx < type; seatIdx++) {
+        if (!started) {
+          if (key === startKey && seatIdx === startSeatIdx) started = true;
+          else continue;
+        }
+        if (seatIdx < occupantCount) continue;
+        slots.push({ key, seatIdx });
+      }
+    }
+  }
+  return slots;
+};
+
 export default function SeatingPage() {
   useDocumentTitle('Sơ đồ chỗ ngồi');
 
@@ -229,6 +262,7 @@ export default function SeatingPage() {
   const [newStudentName, setNewStudentName] = useState('');
   const [isAddPopoverOpen, setIsAddPopoverOpen] = useState(false);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [dragOverTableKey, setDragOverTableKey] = useState<string | null>(null);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
   const editingOriginalNameRef = useRef('');
   const captureRef = useRef<HTMLDivElement>(null);
@@ -236,13 +270,6 @@ export default function SeatingPage() {
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const addInputRef = useRef<HTMLInputElement>(null);
   const addPopoverRef = useRef<HTMLDivElement>(null);
-
-  /** Marquee của lưới dùng chung DOM node với vùng chụp ảnh (captureRef), để
-   * vùng trống quanh nhãn "BẢNG" cũng được tính là nền khi bấm để bỏ chọn. */
-  const setGridCaptureRef = useCallback((node: HTMLDivElement | null) => {
-    captureRef.current = node;
-    gridContainerRef.current = node;
-  }, []);
 
   const poolSelection = useSelection<number>();
   const gridSelection = useSelection<string>();
@@ -367,26 +394,81 @@ export default function SeatingPage() {
   };
 
   const handleDragStart = (e: DragEvent, studentIndex: number) => {
+    e.stopPropagation();
+    if (data && poolSelection.isSelected(studentIndex) && poolSelection.selectedIds.size > 1) {
+      const orderedIndexes = data.students.filter((s) => poolSelection.isSelected(s.index)).map((s) => s.index);
+      e.dataTransfer.setData('application/x-student-indexes', JSON.stringify(orderedIndexes));
+    }
     e.dataTransfer.setData('text/plain', String(studentIndex));
     e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleTableDragStart = (key: string) => (e: DragEvent) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('application/x-table-key', key);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDropTableMove = (targetKey: string) => (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverTableKey(null);
+    setDragOverTarget(null);
+    const sourceKey = e.dataTransfer.getData('application/x-table-key');
+    if (!sourceKey || sourceKey === targetKey) return;
+    setData((prev) => {
+      if (!prev) return prev;
+      const tables = { ...prev.tables };
+      const sourceTable = tables[sourceKey];
+      if (!sourceTable) return prev;
+      const targetTable = tables[targetKey];
+      if (targetTable) tables[sourceKey] = targetTable;
+      else delete tables[sourceKey];
+      tables[targetKey] = sourceTable;
+      return { ...prev, tables };
+    });
   };
 
   const handleDropOnSeat = (targetKey: string, seatIndex: number) => (e: DragEvent) => {
     e.preventDefault();
     setDragOverTarget(null);
+    const multiRaw = e.dataTransfer.getData('application/x-student-indexes');
     const studentIndex = Number(e.dataTransfer.getData('text/plain'));
-    if (!studentIndex) return;
+    if (!studentIndex && !multiRaw) return;
     setData((prev) => {
       if (!prev) return prev;
       const tables = { ...prev.tables };
-      const source = findSeat(tables, studentIndex);
-      if (source && source.key === targetKey && source.seatIdx === seatIndex) return prev;
 
       const targetExisting = tables[targetKey];
       const targetType = targetExisting?.type ?? prev.defaultTableType;
       if (seatIndex >= targetType) return prev;
 
       const isOccupiedSeat = !!targetExisting && seatIndex < targetExisting.studentIndexes.length;
+
+      if (multiRaw && !isOccupiedSeat) {
+        let indexes: number[];
+        try {
+          indexes = JSON.parse(multiRaw);
+        } catch {
+          indexes = [studentIndex];
+        }
+        if (!Array.isArray(indexes) || indexes.length === 0) return prev;
+
+        const slots = collectEmptySeatsFrom(prev.tables, prev.rows, prev.cols, prev.defaultTableType, targetKey, seatIndex);
+        const assignCount = Math.min(indexes.length, slots.length);
+        for (let i = 0; i < assignCount; i++) {
+          const slot = slots[i];
+          const idx = indexes[i];
+          const existing = tables[slot.key];
+          const type = existing?.type ?? prev.defaultTableType;
+          tables[slot.key] = { type, studentIndexes: existing ? [...existing.studentIndexes, idx] : [idx] };
+        }
+        return { ...prev, tables };
+      }
+
+      if (!studentIndex) return prev;
+      const source = findSeat(tables, studentIndex);
+      if (source && source.key === targetKey && source.seatIdx === seatIndex) return prev;
 
       if (isOccupiedSeat) {
         const targetOccupants = [...targetExisting!.studentIndexes];
@@ -843,10 +925,13 @@ export default function SeatingPage() {
           )}
         </aside>
 
-        <div className="flex-1 overflow-auto p-8 flex justify-center">
+        <div
+          ref={gridContainerRef}
+          onMouseDown={gridMarquee.onMouseDown}
+          className="relative flex-1 overflow-auto p-8 flex justify-center"
+        >
           <div
-            ref={setGridCaptureRef}
-            onMouseDown={gridMarquee.onMouseDown}
+            ref={captureRef}
             className="relative inline-flex flex-col items-center gap-4 bg-slate-50 p-6 rounded-xl h-fit"
           >
             <div className="px-8 py-2 bg-slate-800 text-white text-xs font-semibold tracking-widest rounded-md">
@@ -861,17 +946,22 @@ export default function SeatingPage() {
                     const type = table?.type ?? data.defaultTableType;
                     const occupants = table?.studentIndexes ?? [];
                     const isSelected = gridSelection.isSelected(key);
+                    const isTableDragOver = dragOverTableKey === key;
                     return (
                       <div
                         key={key}
                         data-marquee-id={key}
+                        draggable={!!table}
+                        onDragStart={handleTableDragStart(key)}
                         onClick={(e: ReactMouseEvent) => {
                           if (editingStudentId !== null && occupants.includes(editingStudentId)) return;
                           gridSelection.handleItemClick(key, e);
                         }}
                         className={`flex gap-1 p-1.5 rounded-lg border transition-colors ${
-                          table ? 'bg-slate-100 border-slate-300' : 'bg-transparent border-dashed border-slate-200'
-                        } ${isSelected ? '!border-blue-600 ring-2 ring-blue-200' : ''}`}
+                          table ? 'bg-slate-100 border-slate-300 cursor-grab' : 'bg-transparent border-dashed border-slate-200'
+                        } ${isSelected ? '!border-blue-600 ring-2 ring-blue-200' : ''} ${
+                          isTableDragOver ? '!border-emerald-500 ring-2 ring-emerald-200' : ''
+                        }`}
                       >
                         {[...Array(type)].map((_, seatIdx) => {
                           const studentIndex = occupants[seatIdx];
@@ -884,10 +974,25 @@ export default function SeatingPage() {
                               key={seatIdx}
                               onDragOver={(e) => {
                                 e.preventDefault();
-                                setDragOverTarget(targetId);
+                                if (e.dataTransfer.types.includes('application/x-table-key')) {
+                                  setDragOverTableKey(key);
+                                  setDragOverTarget(null);
+                                } else {
+                                  setDragOverTarget(targetId);
+                                  setDragOverTableKey(null);
+                                }
                               }}
-                              onDragLeave={() => setDragOverTarget((t) => (t === targetId ? null : t))}
-                              onDrop={handleDropOnSeat(key, seatIdx)}
+                              onDragLeave={() => {
+                                setDragOverTarget((t) => (t === targetId ? null : t));
+                                setDragOverTableKey((k) => (k === key ? null : k));
+                              }}
+                              onDrop={(e) => {
+                                if (e.dataTransfer.types.includes('application/x-table-key')) {
+                                  handleDropTableMove(key)(e);
+                                } else {
+                                  handleDropOnSeat(key, seatIdx)(e);
+                                }
+                              }}
                               onDoubleClick={() => {
                                 if (studentIndex !== undefined && studentName) startEditingStudent(studentIndex, studentName);
                               }}
@@ -939,18 +1044,18 @@ export default function SeatingPage() {
                 </div>
               ))}
             </div>
-            {gridMarquee.marqueeRect && (
-              <div
-                className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
-                style={{
-                  left: gridMarquee.marqueeRect.left,
-                  top: gridMarquee.marqueeRect.top,
-                  width: gridMarquee.marqueeRect.width,
-                  height: gridMarquee.marqueeRect.height,
-                }}
-              />
-            )}
           </div>
+          {gridMarquee.marqueeRect && (
+            <div
+              className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
+              style={{
+                left: gridMarquee.marqueeRect.left,
+                top: gridMarquee.marqueeRect.top,
+                width: gridMarquee.marqueeRect.width,
+                height: gridMarquee.marqueeRect.height,
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
