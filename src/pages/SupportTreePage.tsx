@@ -33,6 +33,7 @@ import { useResetTool } from '../hooks/useResetTool';
 import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
 import ToolPageToolbar from '../components/ToolPageToolbar';
+import TruncatedName from '../components/TruncatedName';
 
 const STORAGE_KEY = 'class-management:support-tree';
 
@@ -131,12 +132,21 @@ const CustomNode = ({ data, id, selected }: any) => {
            placeholder="Tên học sinh"
          />
        ) : (
-         <span
-           className="font-semibold text-[13px] text-slate-900 truncate w-full text-center mt-0.5 cursor-default"
-           onDoubleClick={startEditing}
-         >
-           {data.name || 'Tên học sinh'}
-         </span>
+         data.name ? (
+           <TruncatedName
+             name={data.name}
+             maxLength={10}
+             className="font-semibold text-[13px] text-slate-900 w-full text-center mt-0.5 cursor-default"
+             onDoubleClick={startEditing}
+           />
+         ) : (
+           <span
+             className="font-semibold text-[13px] text-slate-900 truncate w-full text-center mt-0.5 cursor-default"
+             onDoubleClick={startEditing}
+           >
+             Tên học sinh
+           </span>
+         )
        )}
        <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-slate-400 !border-none !rounded-none bottom-[-5px]" />
      </div>

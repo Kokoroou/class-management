@@ -28,6 +28,8 @@ import { useMarqueeSelection } from '../hooks/useMarqueeSelection';
 import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
 import ToolPageToolbar from '../components/ToolPageToolbar';
+import TruncatedName from '../components/TruncatedName';
+import { truncateMiddle } from '../utils/text';
 
 const STORAGE_KEY = 'class-management:seating-v2';
 const POOL_VISIBLE_KEY = 'class-management:seating-pool-visible';
@@ -818,7 +820,7 @@ export default function SeatingPage() {
                     className="flex-1 min-w-0 outline-none bg-white border border-blue-300 rounded px-1 text-sm"
                   />
                 ) : (
-                  <span className="truncate">{s.name}</span>
+                  <TruncatedName name={s.name} maxLength={22} />
                 )}
                 <button
                   onClick={(e) => {
@@ -1055,7 +1057,7 @@ export default function SeatingPage() {
                                       className="text-xs font-medium text-slate-800 truncate w-full text-center cursor-grab select-none"
                                       title={studentName}
                                     >
-                                      {studentName}
+                                      {truncateMiddle(studentName, 10)}
                                     </span>
                                   )}
                                   <button

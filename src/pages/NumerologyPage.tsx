@@ -21,6 +21,7 @@ import StartingPointPicker from '../components/StartingPointPicker';
 import ResetButton from '../components/ResetButton';
 import ToolPageToolbar from '../components/ToolPageToolbar';
 import NumerologyDetailSidebar from '../components/NumerologyDetailSidebar';
+import TruncatedName from '../components/TruncatedName';
 import {
   NUMBER_MEANINGS,
   calcLifePathNumber,
@@ -424,8 +425,10 @@ function MainTable() {
                           placeholder="Họ và tên"
                           className="w-full outline-none bg-white border border-blue-300 rounded px-1 font-medium text-slate-900"
                         />
+                      ) : row.name ? (
+                        <TruncatedName name={row.name} maxLength={28} className="block w-full font-medium text-slate-900" />
                       ) : (
-                        <span className="block w-full font-medium text-slate-900">{row.name || 'Họ và tên'}</span>
+                        <span className="block w-full font-medium text-slate-900">Họ và tên</span>
                       )}
                     </td>
                     <td
