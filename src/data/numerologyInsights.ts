@@ -3,7 +3,17 @@
  * sau này dễ chỉnh sửa, bổ sung hoặc lược bớt mà không cần đụng vào component.
  */
 
-export type NumerologyMetricKey = 'lifePath' | 'expression' | 'soulUrge' | 'personality' | 'birthDay';
+import type { FiveElement, GridLineKey } from '../utils/numerology';
+
+export type NumerologyMetricKey =
+  | 'lifePath'
+  | 'expression'
+  | 'soulUrge'
+  | 'personality'
+  | 'birthDay'
+  | 'familyName'
+  | 'middleName'
+  | 'givenName';
 
 export interface NumerologyMetricDef {
   key: NumerologyMetricKey;
@@ -55,6 +65,30 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     description:
       'Tính riêng từ ngày sinh trong tháng (không gồm tháng, năm). Thể hiện một năng khiếu hoặc điểm mạnh cụ thể, bổ trợ thêm cho Số chủ đạo.',
     requiresFullName: false,
+  },
+  {
+    key: 'familyName',
+    label: 'Số Họ',
+    subtitle: 'Family Name Number',
+    description:
+      'Tính riêng từ phần Họ — từ đầu tiên trong họ tên đầy đủ. Thể hiện ảnh hưởng của dòng họ, nền tảng gia đình đến tính cách và những giá trị mà học sinh mang theo.',
+    requiresFullName: true,
+  },
+  {
+    key: 'middleName',
+    label: 'Số Tên đệm',
+    subtitle: 'Middle Name Number',
+    description:
+      'Tính riêng từ phần Tên đệm — các từ ở giữa họ tên đầy đủ, có thể không có nếu họ tên chỉ gồm 2 từ. Thể hiện lớp tính cách trung gian, cách học sinh điều hòa giữa ảnh hưởng gia đình (Số Họ) và bản sắc riêng (Số Tên).',
+    requiresFullName: true,
+  },
+  {
+    key: 'givenName',
+    label: 'Số Tên',
+    subtitle: 'Given Name Number',
+    description:
+      'Tính riêng từ phần Tên — từ cuối cùng trong họ tên đầy đủ, cũng là tên học sinh thường được gọi hàng ngày. Thể hiện bản sắc cá nhân, khía cạnh mà học sinh thể hiện rõ nét nhất trong đời sống thường ngày.',
+    requiresFullName: true,
   },
 ];
 
@@ -288,5 +322,307 @@ export const LIFE_PATH_COMPATIBILITY: Record<number, CompatibilityInsight> = {
     considerWith:
       "Cần thêm thời gian với nhóm 'Độc lập & Lý trí' (1, 5, 7) vì tính tự chủ mạnh của nhóm này đôi khi khiến số 33 cảm thấy nỗ lực chăm sóc của mình chưa được ghi nhận.",
     tip: "Khi ghép nhóm, nên nhắc số 33 rằng các em cũng cần được hỗ trợ, không chỉ luôn là người cho đi trong nhóm.",
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Lưới Pythagoras (Pythagorean grid) — diễn giải 8 đường (3 hàng, 3 cột, 2 chéo)
+// suy ra từ tần suất chữ số 1-9 trong ngày sinh. Xem GRID_LINES trong utils/numerology.ts.
+// ---------------------------------------------------------------------------
+
+export interface GridLineMeta {
+  /** Tên gọi của đường, dùng làm tiêu đề hiển thị. */
+  label: string;
+  /** Chuỗi các chữ số cấu thành đường, ví dụ "3-6-9". */
+  digitsLabel: string;
+}
+
+export const GRID_LINE_META: Record<GridLineKey, GridLineMeta> = {
+  'row-mind': { label: 'Đường Tư duy', digitsLabel: '3-6-9' },
+  'row-emotion': { label: 'Đường Cảm xúc', digitsLabel: '2-5-8' },
+  'row-action': { label: 'Đường Hành động', digitsLabel: '1-4-7' },
+  'col-will': { label: 'Đường Ý chí', digitsLabel: '1-2-3' },
+  'col-balance': { label: 'Đường Cân bằng', digitsLabel: '4-5-6' },
+  'col-activity': { label: 'Đường Hoài bão', digitsLabel: '7-8-9' },
+  'diag-determination': { label: 'Đường Quyết tâm', digitsLabel: '1-5-9' },
+  'diag-compassion': { label: 'Đường Trắc ẩn', digitsLabel: '3-5-7' },
+};
+
+export interface GridLineInsight {
+  /** (1) Ý nghĩa khi đủ cả 3 chữ số (điểm mạnh) hoặc thiếu cả 3 (điểm yếu). */
+  meaning: string;
+  /** (2) Gợi ý cách giao bài tập / phương pháp học phù hợp. */
+  studyTip: string;
+  /** (3) Gợi ý cách giao tiếp để khuyến khích học sinh. */
+  communicationTip: string;
+}
+
+export interface GridLineInsightPair {
+  strength: GridLineInsight;
+  weakness: GridLineInsight;
+}
+
+/**
+ * Diễn giải theo trạng thái 'strength' (đủ cả 3 chữ số — điểm mạnh) và 'weakness'
+ * (thiếu cả 3 — điểm cần bồi đắp thêm) cho từng đường trong lưới Pythagoras.
+ * Trạng thái 'neutral' (chỉ có một phần) không mang ý nghĩa rõ rệt nên không diễn giải riêng.
+ */
+export const GRID_LINE_INSIGHTS: Record<GridLineKey, GridLineInsightPair> = {
+  'row-mind': {
+    strength: {
+      meaning:
+        'Tư duy logic tốt, dễ tiếp thu kiến thức mới, thích phân tích vấn đề và lên kế hoạch trước khi hành động.',
+      studyTip:
+        'Nên giao bài tập đòi hỏi phân tích, lập luận nhiều bước và có thể nâng dần độ khó để duy trì thử thách phù hợp.',
+      communicationTip:
+        'Trao đổi bằng lý lẽ, dẫn chứng cụ thể — các em dễ bị thuyết phục bởi lập luận rõ ràng hơn là chỉ nói bằng cảm xúc.',
+    },
+    weakness: {
+      meaning:
+        'Có thể tiếp thu chậm hơn với khái niệm trừu tượng, dễ nản khi phải suy luận nhiều bước liên tiếp.',
+      studyTip:
+        'Nên chia nhỏ kiến thức thành từng bước đơn giản, dùng ví dụ trực quan, hình ảnh minh họa thay vì lý thuyết thuần túy.',
+      communicationTip:
+        'Kiên nhẫn giải thích lại bằng nhiều cách diễn đạt khác nhau, tránh dùng thuật ngữ trừu tượng ngay từ đầu.',
+    },
+  },
+  'row-emotion': {
+    strength: {
+      meaning:
+        'Giàu cảm xúc, dễ đồng cảm, linh hoạt thích nghi với hoàn cảnh và vẫn giữ được tham vọng, mục tiêu riêng.',
+      studyTip:
+        'Phù hợp hoạt động nhóm hoặc dự án có yếu tố cảm xúc/xã hội kết hợp mục tiêu rõ ràng để phát huy cả hai mặt.',
+      communicationTip:
+        'Lắng nghe cảm xúc của các em trước khi góp ý về kết quả; ghi nhận nỗ lực song song với thành tích đạt được.',
+    },
+    weakness: {
+      meaning:
+        'Có thể khó bộc lộ cảm xúc, tỏ ra khô khan hoặc lúng túng khi hoàn cảnh xung quanh thay đổi bất ngờ.',
+      studyTip:
+        'Nên tạo môi trường an toàn để các em tập bày tỏ cảm nhận, tránh ép buộc thích nghi quá nhanh với thay đổi.',
+      communicationTip:
+        'Chủ động hỏi han cảm xúc, tạo cơ hội trò chuyện riêng thay vì chờ các em tự chia sẻ.',
+    },
+  },
+  'row-action': {
+    strength: {
+      meaning:
+        'Vừa độc lập vừa kỷ luật, biết tổ chức công việc thực tế và có chiều sâu suy nghĩ — nền tảng hành động vững chắc.',
+      studyTip:
+        'Nên giao nhiệm vụ thực hành cụ thể, có quy trình rõ ràng và dành không gian tự chủ để các em hoàn thành.',
+      communicationTip:
+        'Trao đổi thẳng thắn, tin tưởng giao việc, hạn chế giám sát quá sát sao khiến các em cảm thấy bị kiểm soát.',
+    },
+    weakness: {
+      meaning:
+        'Có thể thiếu tính thực tế, ngại bắt tay vào hành động hoặc khó duy trì kỷ luật khi thực hiện nhiệm vụ dài hạn.',
+      studyTip:
+        'Nên chia nhỏ nhiệm vụ thành các bước cụ thể, có mốc kiểm tra thường xuyên để duy trì động lực hành động.',
+      communicationTip:
+        'Nhắc nhở nhẹ nhàng về tiến độ, đồng hành sát sao hơn trong giai đoạn đầu triển khai nhiệm vụ.',
+    },
+  },
+  'col-will': {
+    strength: {
+      meaning:
+        'Có ý chí rõ ràng, biết cân bằng giữa chính kiến cá nhân và sự nhạy cảm với người khác, tự tin thể hiện quan điểm.',
+      studyTip:
+        'Khuyến khích tham gia tranh biện, thuyết trình, hoặc các hoạt động cần bày tỏ chính kiến trước tập thể.',
+      communicationTip:
+        'Tôn trọng quan điểm riêng của các em, khuyến khích nói lên suy nghĩ thay vì áp đặt cách nhìn của người lớn.',
+    },
+    weakness: {
+      meaning:
+        'Có thể thiếu tự tin thể hiện bản thân, dễ rụt rè hoặc phụ thuộc vào ý kiến của người khác.',
+      studyTip:
+        'Nên bắt đầu từ việc chia sẻ ý kiến trong nhóm nhỏ trước khi mở rộng ra trước tập thể lớn hơn.',
+      communicationTip:
+        'Chủ động hỏi ý kiến trực tiếp, tạo không gian an toàn để các em tập bày tỏ quan điểm của mình.',
+    },
+  },
+  'col-balance': {
+    strength: {
+      meaning:
+        'Cân bằng tốt giữa kỷ luật, sự linh hoạt và tinh thần trách nhiệm với người xung quanh — dễ thích nghi mà vẫn giữ nề nếp.',
+      studyTip:
+        'Có thể giao vai trò tổ chức hoạt động nhóm — vừa cần quy củ vừa cần linh hoạt điều phối giữa các thành viên.',
+      communicationTip:
+        'Trao đổi cởi mở về cả quy tắc lẫn cảm xúc, các em thường dễ tiếp nhận khi thấy được sự hợp lý trong yêu cầu.',
+    },
+    weakness: {
+      meaning:
+        'Dễ mất cân bằng giữa nề nếp và tự do — hoặc quá cứng nhắc, hoặc quá tùy hứng, thiếu ổn định trong thói quen học tập.',
+      studyTip:
+        'Nên thiết lập lịch trình học tập đều đặn nhưng có khoảng linh hoạt vừa phải để tránh gò bó quá mức.',
+      communicationTip:
+        'Nhắc nhở nhẹ nhàng, nhất quán về nề nếp, tránh thay đổi yêu cầu quá đột ngột khiến các em mất phương hướng.',
+    },
+  },
+  'col-activity': {
+    strength: {
+      meaning:
+        'Có chiều sâu suy nghĩ kết hợp tham vọng và lý tưởng sống rộng lớn — thường có mục tiêu dài hạn rõ ràng, mang ý nghĩa.',
+      studyTip:
+        'Phù hợp các dự án lớn, có tính thử thách và mang ý nghĩa vượt ra ngoài lợi ích cá nhân trước mắt.',
+      communicationTip:
+        'Trao đổi ở tầm nhìn dài hạn, khơi gợi lý tưởng và mục tiêu lớn để tạo động lực cho các em.',
+    },
+    weakness: {
+      meaning:
+        'Có thể thiếu định hướng dài hạn, dễ hài lòng với mục tiêu trước mắt mà chưa hình dung được bức tranh lớn hơn.',
+      studyTip:
+        'Nên giúp các em từng bước hình dung mục tiêu xa hơn thông qua các hoạt động định hướng, khám phá bản thân.',
+      communicationTip:
+        'Gợi mở bằng câu hỏi về ước mơ, hoài bão thay vì chỉ tập trung vào nhiệm vụ trước mắt.',
+    },
+  },
+  'diag-determination': {
+    strength: {
+      meaning:
+        'Có ý chí quyết tâm rất cao, dám nghĩ dám làm và theo đuổi mục tiêu đến cùng dù gặp khó khăn.',
+      studyTip:
+        'Nên giao các thử thách có độ khó tăng dần để các em có cơ hội phát huy tinh thần quyết tâm.',
+      communicationTip:
+        'Công nhận nỗ lực bền bỉ, khuyến khích các em tiếp tục kiên trì khi gặp trở ngại trên đường đi.',
+    },
+    weakness: {
+      meaning:
+        'Dễ nản lòng, bỏ cuộc giữa chừng khi gặp khó khăn, thiếu động lực theo đuổi mục tiêu dài hạn.',
+      studyTip:
+        'Nên đặt các mục tiêu ngắn hạn, dễ đạt được để tạo đà, từng bước xây dựng sự tự tin và quyết tâm.',
+      communicationTip:
+        'Động viên kịp thời sau mỗi bước tiến nhỏ, tránh chê trách khi các em có dấu hiệu nản lòng.',
+    },
+  },
+  'diag-compassion': {
+    strength: {
+      meaning:
+        'Giàu lòng trắc ẩn, biết cảm thông và sẵn sàng chia sẻ, đồng thời có chiều sâu nội tâm để thấu hiểu người khác.',
+      studyTip:
+        'Phù hợp hoạt động thiện nguyện, hỗ trợ bạn bè, hoặc các chủ đề học tập gắn với giá trị nhân văn.',
+      communicationTip:
+        'Ghi nhận sự đồng cảm, tinh tế của các em, khuyến khích các em chia sẻ cảm nhận với người khác nhiều hơn.',
+    },
+    weakness: {
+      meaning:
+        'Có thể gặp khó khăn khi thấu hiểu hoặc chia sẻ cảm xúc với người khác, đôi khi tỏ ra thờ ơ.',
+      studyTip:
+        'Nên tạo cơ hội tham gia hoạt động nhóm nhỏ, thực hành lắng nghe và chia sẻ để rèn sự đồng cảm dần dần.',
+      communicationTip:
+        'Làm mẫu bằng cách thể hiện sự quan tâm, kiên nhẫn hướng dẫn các em cách đặt mình vào vị trí người khác.',
+    },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Ngũ hành (Kim / Mộc / Thủy / Hỏa / Thổ) — diễn giải khi một hành nổi trội
+// ('dominant', tỷ lệ % cao nhất) hoặc thiếu hụt ('lacking', tỷ lệ % thấp/bằng 0)
+// trong phân bố tính từ ngày sinh. Xem calcFiveElements trong utils/numerology.ts.
+// ---------------------------------------------------------------------------
+
+export interface FiveElementInsight {
+  /** (1) Ý nghĩa / đặc điểm tính cách khi hành này nổi trội hoặc thiếu hụt. */
+  meaning: string;
+  /** (2) Gợi ý cách giao bài tập / phương pháp học phù hợp. */
+  studyTip: string;
+  /** (3) Gợi ý cách giao tiếp để khuyến khích học sinh. */
+  communicationTip: string;
+}
+
+export interface FiveElementInsightPair {
+  dominant: FiveElementInsight;
+  lacking: FiveElementInsight;
+}
+
+export const FIVE_ELEMENT_INSIGHTS: Record<FiveElement, FiveElementInsightPair> = {
+  kim: {
+    dominant: {
+      meaning:
+        'Hành Kim nổi trội thể hiện tính kỷ luật, quyết đoán và tư duy lý trí mạnh mẽ. Học sinh thường đặt mục tiêu rõ ràng và có ý chí thực hiện đến cùng, nhưng đôi khi cứng nhắc, khó thỏa hiệp.',
+      studyTip:
+        'Nên giao nhiệm vụ có tiêu chí đánh giá rõ ràng, thử thách đòi hỏi ý chí; tránh ép các em thay đổi phương pháp đã quen thuộc quá đột ngột.',
+      communicationTip:
+        'Trao đổi thẳng thắn, đi vào trọng tâm; tôn trọng chính kiến của các em nhưng khéo léo gợi mở để các em cởi mở hơn với góc nhìn khác.',
+    },
+    lacking: {
+      meaning:
+        'Hành Kim thiếu hụt cho thấy học sinh có thể thiếu sự quyết đoán, dễ do dự khi cần đưa ra quyết định hoặc giữ vững lập trường.',
+      studyTip:
+        'Nên tạo cơ hội để các em tập ra quyết định trong phạm vi nhỏ, có hướng dẫn, để dần rèn luyện sự dứt khoát.',
+      communicationTip:
+        'Khuyến khích các em bày tỏ chính kiến, tránh quyết định thay các em ngay cả khi các em còn lưỡng lự.',
+    },
+  },
+  moc: {
+    dominant: {
+      meaning:
+        'Hành Mộc nổi trội gắn với tinh thần ham học hỏi, khả năng sáng tạo và mong muốn phát triển không ngừng, nhưng đôi khi thiếu sự kiên định khi theo đuổi một hướng đi lâu dài.',
+      studyTip:
+        'Phù hợp với các hoạt động khám phá, học tập đa dạng chủ đề; nên xen kẽ nhiều hình thức học để nuôi dưỡng sự ham học hỏi.',
+      communicationTip:
+        'Khuyến khích đặt câu hỏi, tìm tòi; đồng thời nhắc nhở nhẹ nhàng để các em theo đến cùng một mục tiêu đã chọn.',
+    },
+    lacking: {
+      meaning:
+        'Hành Mộc thiếu hụt có thể khiến học sinh ngại thử điều mới, thiếu động lực phát triển bản thân hoặc học theo lối mòn quen thuộc.',
+      studyTip:
+        'Nên chủ động giới thiệu những trải nghiệm học tập mới mẻ, khơi gợi sự tò mò thay vì chờ các em tự tìm kiếm.',
+      communicationTip:
+        'Động viên bằng những ví dụ truyền cảm hứng về sự phát triển, khích lệ từng bước nhỏ khi các em thử điều mới.',
+    },
+  },
+  thuy: {
+    dominant: {
+      meaning:
+        'Hành Thủy nổi trội cho thấy sự linh hoạt, khả năng thích nghi nhanh và giao tiếp khéo léo, nhưng cảm xúc và định hướng có thể dễ dao động.',
+      studyTip:
+        'Phù hợp hoạt động cần giao tiếp, làm việc nhóm linh hoạt; nên có định hướng rõ để tránh các em bị phân tán mục tiêu.',
+      communicationTip:
+        'Trò chuyện cởi mở, dùng ngôn ngữ mềm mại; giúp các em giữ vững định hướng khi có nhiều lựa chọn khiến các em phân vân.',
+    },
+    lacking: {
+      meaning:
+        'Hành Thủy thiếu hụt có thể khiến học sinh kém linh hoạt trong giao tiếp, ngại thích nghi với thay đổi hoặc môi trường mới.',
+      studyTip:
+        'Nên tạo cơ hội thực hành giao tiếp, làm quen dần với các tình huống mới trong môi trường an toàn.',
+      communicationTip:
+        'Kiên nhẫn hướng dẫn cách diễn đạt, tạo điều kiện để các em luyện tập giao tiếp thường xuyên hơn.',
+    },
+  },
+  hoa: {
+    dominant: {
+      meaning:
+        'Hành Hỏa nổi trội thể hiện nguồn năng lượng dồi dào, nhiệt huyết và tinh thần hăng hái trong mọi hoạt động, nhưng đôi khi thiếu kiên nhẫn, dễ nóng vội.',
+      studyTip:
+        'Phù hợp hoạt động sôi nổi, có tính thi đua, thể hiện; nên xen kẽ khoảng nghỉ để các em điều tiết năng lượng.',
+      communicationTip:
+        'Giao tiếp tràn đầy năng lượng, ghi nhận sự nhiệt tình; đồng thời nhắc nhở nhẹ nhàng về việc giữ bình tĩnh khi cần.',
+    },
+    lacking: {
+      meaning:
+        'Hành Hỏa thiếu hụt có thể khiến học sinh thiếu năng lượng, động lực hoặc sự hào hứng khi tham gia hoạt động.',
+      studyTip:
+        'Nên lồng ghép yếu tố trò chơi, thi đua nhẹ nhàng để khơi dậy hứng thú và năng lượng tích cực.',
+      communicationTip:
+        'Khích lệ bằng sự nhiệt tình từ chính người lớn, tạo không khí vui vẻ để truyền động lực cho các em.',
+    },
+  },
+  tho: {
+    dominant: {
+      meaning:
+        'Hành Thổ nổi trội thể hiện sự ổn định, kiên nhẫn và đáng tin cậy, nhưng đôi khi ngại thay đổi, chậm thích nghi với cái mới.',
+      studyTip:
+        'Phù hợp nhiệm vụ dài hạn, cần sự bền bỉ và nề nếp; nên giới thiệu thay đổi từ từ, có lộ trình rõ ràng.',
+      communicationTip:
+        'Trao đổi từ tốn, kiên nhẫn; ghi nhận sự ổn định của các em và khuyến khích thử một vài thay đổi nhỏ.',
+    },
+    lacking: {
+      meaning:
+        'Hành Thổ thiếu hụt có thể khiến học sinh thiếu sự ổn định, khó duy trì thói quen hoặc nề nếp học tập lâu dài.',
+      studyTip:
+        'Nên xây dựng lịch trình học tập đều đặn, có nhắc nhở thường xuyên để hình thành thói quen ổn định.',
+      communicationTip:
+        'Kiên trì nhắc nhở một cách nhẹ nhàng, nhất quán, tránh gây áp lực khi các em chưa quen với nề nếp mới.',
+    },
   },
 };

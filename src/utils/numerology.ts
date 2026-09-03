@@ -148,3 +148,205 @@ export const calcBirthDayNumber = (birthDate: string): number | null => {
   if (!parsed) return null;
   return reduceNumber(parsed.day);
 };
+
+// ---------------------------------------------------------------------------
+// Lưới Pythagoras (Pythagorean grid) — tần suất chữ số 1-9 trong ngày sinh.
+// ---------------------------------------------------------------------------
+
+export interface BirthDigitFrequency {
+  /** Số lần xuất hiện của mỗi chữ số 1-9 trong toàn bộ ngày sinh (dd/mm/yyyy). */
+  counts: Record<number, number>;
+  /** Tổng số chữ số 1-9 đếm được (không tính số 0). */
+  total: number;
+}
+
+/** Đếm tần suất các chữ số 1-9 xuất hiện trong ngày sinh đầy đủ, dùng làm dữ liệu cho lưới Pythagoras. */
+export const calcBirthDigitFrequency = (birthDate: string): BirthDigitFrequency | null => {
+  const parsed = parseBirthDate(birthDate);
+  if (!parsed) return null;
+  const digits = `${pad2(parsed.day)}${pad2(parsed.month)}${parsed.year}`.split('').map(Number);
+
+  const counts: Record<number, number> = {};
+  for (let d = 1; d <= 9; d++) counts[d] = 0;
+  let total = 0;
+  digits.forEach((d) => {
+    if (d >= 1 && d <= 9) {
+      counts[d] += 1;
+      total += 1;
+    }
+  });
+
+  return { counts, total };
+};
+
+export type GridLineKey =
+  | 'row-mind'
+  | 'row-emotion'
+  | 'row-action'
+  | 'col-will'
+  | 'col-balance'
+  | 'col-activity'
+  | 'diag-determination'
+  | 'diag-compassion';
+
+export interface GridLineDef {
+  key: GridLineKey;
+  digits: [number, number, number];
+}
+
+/**
+ * 8 đường của lưới Pythagoras (3 hàng, 3 cột, 2 đường chéo), theo cách sắp xếp lưới chuẩn:
+ * ```
+ * 3 6 9
+ * 2 5 8
+ * 1 4 7
+ * ```
+ */
+export const GRID_LINES: GridLineDef[] = [
+  { key: 'row-mind', digits: [3, 6, 9] },
+  { key: 'row-emotion', digits: [2, 5, 8] },
+  { key: 'row-action', digits: [1, 4, 7] },
+  { key: 'col-will', digits: [1, 2, 3] },
+  { key: 'col-balance', digits: [4, 5, 6] },
+  { key: 'col-activity', digits: [7, 8, 9] },
+  { key: 'diag-determination', digits: [1, 5, 9] },
+  { key: 'diag-compassion', digits: [3, 5, 7] },
+];
+
+export type GridLineState = 'strength' | 'weakness' | 'neutral';
+
+export interface GridLineResult {
+  key: GridLineKey;
+  digits: [number, number, number];
+  /** 'strength' nếu đủ cả 3 chữ số, 'weakness' nếu thiếu cả 3, 'neutral' nếu chỉ có một phần. */
+  state: GridLineState;
+}
+
+/** Xác định trạng thái từng đường trong lưới Pythagoras dựa trên tần suất chữ số đã đếm được. */
+export const calcGridLines = (counts: Record<number, number>): GridLineResult[] =>
+  GRID_LINES.map((line) => {
+    const present = line.digits.map((d) => counts[d] ?? 0);
+    const state: GridLineState = present.every((c) => c > 0)
+      ? 'strength'
+      : present.every((c) => c === 0)
+        ? 'weakness'
+        : 'neutral';
+    return { ...line, state };
+  });
+
+// ---------------------------------------------------------------------------
+// Chỉ số theo từng phần họ tên (Họ – Tên đệm – Tên).
+// ---------------------------------------------------------------------------
+
+export interface SplitVietnameseName {
+  /** Họ — từ đầu tiên trong họ tên đầy đủ. */
+  familyName: string;
+  /** Tên đệm — các từ ở giữa, có thể rỗng nếu họ tên chỉ có 2 từ. */
+  middleName: string;
+  /** Tên — từ cuối cùng trong họ tên đầy đủ. */
+  givenName: string;
+}
+
+/**
+ * Tách họ tên đầy đủ theo đúng cấu trúc tiếng Việt (Họ – Tên đệm – Tên), khác thứ tự
+ * First Name – Last Name của tiếng Anh: từ đầu tiên luôn là Họ, từ cuối cùng luôn là Tên,
+ * phần còn lại ở giữa là Tên đệm.
+ */
+export const splitVietnameseName = (fullName: string): SplitVietnameseName | null => {
+  const words = fullName.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return null;
+  if (words.length === 1) return { familyName: '', middleName: '', givenName: words[0] };
+  return {
+    familyName: words[0],
+    middleName: words.slice(1, -1).join(' '),
+    givenName: words[words.length - 1],
+  };
+};
+
+const nameNumberFromPart = (part: string): number | null => {
+  const normalized = stripDiacritics(part).toLowerCase().replace(/[^a-z]/g, '');
+  if (!normalized) return null;
+  return reduceNumber(sumLetterValues(normalized));
+};
+
+/** Số Họ: tính riêng từ phần Họ trong họ tên đầy đủ. */
+export const calcFamilyNameNumber = (fullName: string): number | null => {
+  const parts = splitVietnameseName(fullName);
+  return parts ? nameNumberFromPart(parts.familyName) : null;
+};
+
+/** Số Tên đệm: tính riêng từ phần Tên đệm trong họ tên đầy đủ. */
+export const calcMiddleNameNumber = (fullName: string): number | null => {
+  const parts = splitVietnameseName(fullName);
+  return parts ? nameNumberFromPart(parts.middleName) : null;
+};
+
+/** Số Tên: tính riêng từ phần Tên (từ cuối cùng) trong họ tên đầy đủ. */
+export const calcGivenNameNumber = (fullName: string): number | null => {
+  const parts = splitVietnameseName(fullName);
+  return parts ? nameNumberFromPart(parts.givenName) : null;
+};
+
+// ---------------------------------------------------------------------------
+// Ngũ hành (Kim / Mộc / Thủy / Hỏa / Thổ) — quy đổi từ ngày sinh.
+// ---------------------------------------------------------------------------
+
+export type FiveElement = 'kim' | 'moc' | 'thuy' | 'hoa' | 'tho';
+
+export const FIVE_ELEMENT_LABELS: Record<FiveElement, string> = {
+  kim: 'Kim',
+  moc: 'Mộc',
+  thuy: 'Thủy',
+  hoa: 'Hỏa',
+  tho: 'Thổ',
+};
+
+/**
+ * Quy đổi mỗi chữ số 0-9 sang một hành, theo cặp Sinh số – Thành số của Hà Đồ:
+ * 1 & 6 → Thủy, 2 & 7 → Hỏa, 3 & 8 → Mộc, 4 & 9 → Kim, 5 & 0 → Thổ.
+ */
+const ELEMENT_BY_DIGIT: Record<number, FiveElement> = {
+  1: 'thuy', 6: 'thuy',
+  2: 'hoa', 7: 'hoa',
+  3: 'moc', 8: 'moc',
+  4: 'kim', 9: 'kim',
+  5: 'tho', 0: 'tho',
+};
+
+export type FiveElementDistribution = Record<FiveElement, number>;
+
+/**
+ * Tính tỷ lệ % mỗi hành trong Ngũ hành dựa trên toàn bộ 8 chữ số của ngày sinh (dd/mm/yyyy).
+ * Kết quả luôn làm tròn về số nguyên và có tổng đúng bằng 100.
+ */
+export const calcFiveElements = (birthDate: string): FiveElementDistribution | null => {
+  const parsed = parseBirthDate(birthDate);
+  if (!parsed) return null;
+  const digits = `${pad2(parsed.day)}${pad2(parsed.month)}${parsed.year}`.split('').map(Number);
+
+  const counts: Record<FiveElement, number> = { kim: 0, moc: 0, thuy: 0, hoa: 0, tho: 0 };
+  digits.forEach((d) => {
+    counts[ELEMENT_BY_DIGIT[d]] += 1;
+  });
+
+  const total = digits.length;
+  const shares = (Object.keys(counts) as FiveElement[]).map((el) => {
+    const exact = (counts[el] / total) * 100;
+    return { el, floor: Math.floor(exact), remainder: exact - Math.floor(exact) };
+  });
+
+  const result: FiveElementDistribution = { kim: 0, moc: 0, thuy: 0, hoa: 0, tho: 0 };
+  shares.forEach((s) => {
+    result[s.el] = s.floor;
+  });
+
+  // Làm tròn xuống có thể hụt vài điểm % — bù phần dư vào các hành có phần thập phân lớn nhất
+  // để tổng luôn đúng 100.
+  let remaining = 100 - shares.reduce((sum, s) => sum + s.floor, 0);
+  const byRemainderDesc = [...shares].sort((a, b) => b.remainder - a.remainder);
+  for (let i = 0; i < byRemainderDesc.length && remaining > 0; i++, remaining--) {
+    result[byRemainderDesc[i].el] += 1;
+  }
+
+  return result;
+};

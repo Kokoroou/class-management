@@ -3,7 +3,10 @@ import { Users, X } from 'lucide-react';
 import {
   calcBirthDayNumber,
   calcExpressionNumber,
+  calcFamilyNameNumber,
+  calcGivenNameNumber,
   calcLifePathNumber,
+  calcMiddleNameNumber,
   calcPersonalityNumber,
   calcSoulUrgeNumber,
 } from '../utils/numerology';
@@ -21,6 +24,9 @@ const CALCULATORS: Record<NumerologyMetricKey, (student: DetailStudent) => numbe
   soulUrge: (s) => calcSoulUrgeNumber(s.name),
   personality: (s) => calcPersonalityNumber(s.name),
   birthDay: (s) => calcBirthDayNumber(s.birthDate),
+  familyName: (s) => calcFamilyNameNumber(s.name),
+  middleName: (s) => calcMiddleNameNumber(s.name),
+  givenName: (s) => calcGivenNameNumber(s.name),
 };
 
 function MetricNumberBadge({ value }: { value: number | null }) {
