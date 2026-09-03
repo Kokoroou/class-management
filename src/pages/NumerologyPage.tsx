@@ -132,7 +132,7 @@ function NumberBadge({ value }: { value: number | null }) {
       >
         {value}
       </span>
-      <span className="text-xs text-slate-500 max-w-[220px]">{NUMBER_MEANINGS[value]}</span>
+      <span className="text-xs text-slate-500 max-w-[260px]">{NUMBER_MEANINGS[value]}</span>
     </div>
   );
 }
@@ -375,18 +375,18 @@ function MainTable() {
                     STT {sortIcon('order')}
                   </button>
                 </th>
-                <th className="px-4 py-2.5 font-medium">
+                <th className="px-4 py-2.5 font-medium w-48">
                   <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-slate-900">
                     Tên học sinh {sortIcon('name')}
                   </button>
                 </th>
                 <th className="px-4 py-2.5 font-medium w-36">Ngày sinh</th>
-                <th className="px-4 py-2.5 font-medium w-56">
+                <th className="px-4 py-2.5 font-medium w-72">
                   <button onClick={() => toggleSort('lifePath')} className="flex items-center gap-1 hover:text-slate-900">
                     Số chủ đạo {sortIcon('lifePath')}
                   </button>
                 </th>
-                <th className="px-4 py-2.5 font-medium w-56">
+                <th className="px-4 py-2.5 font-medium w-72">
                   <button onClick={() => toggleSort('nameNumber')} className="flex items-center gap-1 hover:text-slate-900">
                     Số tên {sortIcon('nameNumber')}
                   </button>
@@ -426,7 +426,7 @@ function MainTable() {
                           className="w-full outline-none bg-white border border-blue-300 rounded px-1 font-medium text-slate-900"
                         />
                       ) : row.name ? (
-                        <TruncatedName name={row.name} maxLength={28} className="block w-full font-medium text-slate-900" />
+                        <TruncatedName name={row.name} maxLength={18} className="block w-full font-medium text-slate-900" />
                       ) : (
                         <span className="block w-full font-medium text-slate-900">Họ và tên</span>
                       )}
