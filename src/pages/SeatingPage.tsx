@@ -7,6 +7,8 @@ import {
   Image as ImageIcon,
   LayoutGrid,
   Merge,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
   Plus,
@@ -28,6 +30,8 @@ import ResetButton from '../components/ResetButton';
 import ToolPageToolbar from '../components/ToolPageToolbar';
 
 const STORAGE_KEY = 'class-management:seating-v2';
+const POOL_VISIBLE_KEY = 'class-management:seating-pool-visible';
+const CONFIG_SIDEBAR_OPEN_KEY = 'class-management:seating-config-open';
 const DEFAULT_ROWS = 4;
 const DEFAULT_COLS = 6;
 const MAX_GRID_SIZE = 12;
@@ -271,7 +275,8 @@ export default function SeatingPage() {
   const [data, setData] = useLocalStorage<SeatingData | null>(STORAGE_KEY, null);
   const [newStudentName, setNewStudentName] = useState('');
   const [isAddPopoverOpen, setIsAddPopoverOpen] = useState(false);
-  const [isConfigSidebarOpen, setIsConfigSidebarOpen] = useState(true);
+  const [isConfigSidebarOpen, setIsConfigSidebarOpen] = useLocalStorage(CONFIG_SIDEBAR_OPEN_KEY, true);
+  const [isPoolVisible, setIsPoolVisible] = useLocalStorage(POOL_VISIBLE_KEY, true);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [dragOverTableKey, setDragOverTableKey] = useState<string | null>(null);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
@@ -767,15 +772,16 @@ export default function SeatingPage() {
   const canShuffle = shuffleScopeCount >= 2;
 
   return (
-    <div className="w-full h-full flex overflow-hidden">
+    <div className="relative w-full h-full flex overflow-hidden">
       <aside
         ref={poolContainerRef}
-        className="relative w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden"
+        className="relative shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden transition-[width] duration-150"
+        style={{ width: isPoolVisible ? 240 : 0 }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDropOnPool}
         onMouseDown={poolMarquee.onMouseDown}
       >
-        <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-200">
+        <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-200 truncate">
           Chưa xếp chỗ ({unassignedStudents.length})
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1.5">
@@ -840,6 +846,15 @@ export default function SeatingPage() {
           />
         )}
       </aside>
+
+      <button
+        onClick={() => setIsPoolVisible((open) => !open)}
+        className="absolute top-1/2 z-30 w-8 h-8 flex items-center justify-center bg-slate-700 rounded-r-md shadow-sm text-white hover:bg-slate-600 transition-[left] duration-150"
+        style={{ left: isPoolVisible ? 240 : 0, transform: 'translateY(-50%)' }}
+        title={isPoolVisible ? 'Ẩn danh sách chưa xếp chỗ' : 'Hiện danh sách chưa xếp chỗ'}
+      >
+        {isPoolVisible ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+      </button>
 
       <div className="relative flex-1 overflow-hidden">
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
@@ -1083,21 +1098,10 @@ export default function SeatingPage() {
 
       <aside
         className="shrink-0 bg-white border-l border-slate-200 flex flex-col overflow-hidden transition-[width] duration-150"
-        style={{ width: isConfigSidebarOpen ? 224 : 44 }}
+        style={{ width: isConfigSidebarOpen ? 224 : 0 }}
       >
-        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 gap-2">
-          {isConfigSidebarOpen && (
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
-              Cấu hình sơ đồ
-            </span>
-          )}
-          <button
-            onClick={() => setIsConfigSidebarOpen((open) => !open)}
-            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded shrink-0"
-            title={isConfigSidebarOpen ? 'Thu gọn cấu hình' : 'Mở rộng cấu hình'}
-          >
-            {isConfigSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
-          </button>
+        <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-200 truncate">
+          Cấu hình sơ đồ
         </div>
 
         {isConfigSidebarOpen && (
@@ -1150,6 +1154,15 @@ export default function SeatingPage() {
           </div>
         )}
       </aside>
+
+      <button
+        onClick={() => setIsConfigSidebarOpen((open) => !open)}
+        className="absolute top-1/2 z-30 w-8 h-8 flex items-center justify-center bg-slate-700 rounded-l-md shadow-sm text-white hover:bg-slate-600 transition-[right] duration-150"
+        style={{ right: isConfigSidebarOpen ? 224 : 0, transform: 'translateY(-50%)' }}
+        title={isConfigSidebarOpen ? 'Thu gọn cấu hình' : 'Mở rộng cấu hình'}
+      >
+        {isConfigSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+      </button>
     </div>
   );
 }
