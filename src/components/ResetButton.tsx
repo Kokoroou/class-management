@@ -16,11 +16,12 @@ export default function ResetButton({ onClick, label = 'Tạo mới', icon, clas
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2 bg-white text-amber-700 border border-amber-200 rounded-lg shadow-sm hover:bg-amber-50 hover:border-amber-300 transition-colors text-sm font-semibold ${className}`}
+      className={`flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 bg-white text-amber-700 border border-amber-200 rounded-lg shadow-sm hover:bg-amber-50 hover:border-amber-300 transition-colors text-sm font-semibold ${className}`}
       title={label}
+      aria-label={label}
     >
       {icon ?? <Eraser size={16} />}
-      {label}
+      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 }

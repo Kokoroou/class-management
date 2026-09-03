@@ -16,7 +16,6 @@ import {
   Shuffle,
   Split,
   Trash2,
-  Upload,
   X,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
@@ -325,19 +324,6 @@ export default function SeatingPage() {
   const handleStartTemplate = () => setData(buildTemplateData());
 
   const handleStartExcel = async (file: File) => {
-    try {
-      setData(await parseSeatingFromSheet(file));
-    } catch (err) {
-      console.error(err);
-      alert('Lỗi khi đọc file. Vui lòng kiểm tra lại định dạng Excel.');
-    }
-  };
-
-  const handleReplaceExcel = async (file: File) => {
-    const confirmed = window.confirm(
-      'Bạn có chắc chắn muốn tải lên file Excel khác? Toàn bộ danh sách học sinh và sơ đồ chỗ ngồi hiện tại sẽ bị thay thế và không thể khôi phục.'
-    );
-    if (!confirmed) return;
     try {
       setData(await parseSeatingFromSheet(file));
     } catch (err) {
@@ -859,7 +845,7 @@ export default function SeatingPage() {
       </button>
 
       <div className="relative flex-1 overflow-hidden">
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
           <ToolPageToolbar
             groups={[
               // Nhóm 1: thao tác với đơn/nhóm phần tử đang chọn
@@ -907,23 +893,14 @@ export default function SeatingPage() {
               ],
               // Nhóm 3: tải xuống
               [
-                { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Lưu sơ đồ (PNG)', onClick: handleDownloadPNG },
                 {
-                  key: 'export-excel',
-                  icon: <FileSpreadsheet size={20} />,
-                  title: 'Lưu danh sách chỗ ngồi (Excel)',
-                  onClick: handleDownloadExcel,
-                },
-              ],
-              // Nhóm 4: tải lên
-              [
-                {
-                  key: 'upload-another',
-                  icon: <Upload size={20} />,
-                  title: 'Tải file Excel khác lên (thay thế toàn bộ dữ liệu hiện tại)',
-                  variant: 'upload',
-                  danger: true,
-                  onFileSelect: handleReplaceExcel,
+                  key: 'export',
+                  title: 'Tải xuống',
+                  variant: 'menu',
+                  items: [
+                    { key: 'export-png', icon: <ImageIcon size={16} />, label: 'Ảnh PNG', onClick: handleDownloadPNG },
+                    { key: 'export-excel', icon: <FileSpreadsheet size={16} />, label: 'Excel', onClick: handleDownloadExcel },
+                  ],
                 },
               ],
             ]}
@@ -956,14 +933,14 @@ export default function SeatingPage() {
           )}
         </div>
 
-        <div className="absolute top-4 right-4 z-20">
+        <div className="absolute top-6 right-4 z-20">
           <ResetButton onClick={resetTool} />
         </div>
 
         <div
           ref={gridContainerRef}
           onMouseDown={gridMarquee.onMouseDown}
-          className="absolute inset-0 overflow-auto p-8 flex justify-center"
+          className="absolute inset-0 overflow-auto pt-16 px-8 pb-8 flex justify-center"
         >
           <div
             ref={captureRef}

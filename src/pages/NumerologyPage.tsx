@@ -10,7 +10,6 @@ import {
   Plus,
   Sparkles,
   Trash2,
-  Upload,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -340,24 +339,14 @@ function MainTable() {
                 ],
                 // Nhóm 3: tải xuống (không có thao tác nào áp dụng cho toàn bộ danh sách trên trang này)
                 [
-                  { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Trích xuất PNG', onClick: handleDownloadPNG },
                   {
-                    key: 'export-excel',
-                    icon: <FileSpreadsheet size={20} />,
-                    title: 'Trích xuất Excel',
-                    onClick: handleDownloadExcel,
-                  },
-                ],
-                // Nhóm 4: tải lên
-                [
-                  {
-                    key: 'upload-excel',
-                    icon: <Upload size={20} />,
-                    title: 'Tải lên Excel (thay thế toàn bộ danh sách hiện tại)',
-                    variant: 'upload',
-                    accept: '.xlsx, .xls, .csv',
-                    danger: true,
-                    onFileSelect: importExcel,
+                    key: 'export',
+                    title: 'Tải xuống',
+                    variant: 'menu',
+                    items: [
+                      { key: 'export-png', icon: <ImageIcon size={16} />, label: 'Ảnh PNG', onClick: handleDownloadPNG },
+                      { key: 'export-excel', icon: <FileSpreadsheet size={16} />, label: 'Excel', onClick: handleDownloadExcel },
+                    ],
                   },
                 ],
               ]}

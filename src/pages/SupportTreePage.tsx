@@ -19,7 +19,6 @@ import {
 import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 import {
-  Upload,
   FileSpreadsheet,
   Image as ImageIcon,
   LayoutTemplate,
@@ -474,7 +473,7 @@ function MainCanvas() {
       >
         <Background />
         <Controls />
-        <Panel position="top-center" className="mt-4">
+        <Panel position="top-center" className="mt-6">
             <ToolPageToolbar
               groups={[
                 // Nhóm 1: thao tác với đơn/nhóm phần tử đang chọn
@@ -495,17 +494,20 @@ function MainCanvas() {
                 ],
                 // Nhóm 3: tải xuống
                 [
-                  { key: 'export-png', icon: <ImageIcon size={20} />, title: 'Lưu sơ đồ (PNG)', onClick: onDownloadPNG },
-                  { key: 'export-excel', icon: <FileSpreadsheet size={20} />, title: 'Lưu danh sách (Excel)', onClick: handleDownloadExcel },
-                ],
-                // Nhóm 4: tải lên
-                [
-                  { key: 'upload-excel', icon: <Upload size={20} />, title: 'Tải lên file Excel khác (thay thế toàn bộ sơ đồ hiện tại)', variant: 'upload', accept: '.xlsx, .xls, .csv', danger: true, onFileSelect: parseExcelFile },
+                  {
+                    key: 'export',
+                    title: 'Tải xuống',
+                    variant: 'menu',
+                    items: [
+                      { key: 'export-png', icon: <ImageIcon size={16} />, label: 'Ảnh PNG', onClick: onDownloadPNG },
+                      { key: 'export-excel', icon: <FileSpreadsheet size={16} />, label: 'Excel', onClick: handleDownloadExcel },
+                    ],
+                  },
                 ],
               ]}
             />
         </Panel>
-        <Panel position="top-right" className="mt-4 mr-4">
+        <Panel position="top-right" className="mt-6 mr-4">
             <ResetButton onClick={resetTool} />
         </Panel>
       </ReactFlow>
