@@ -4,14 +4,28 @@ import {
   calcBirthDayNumber,
   calcExpressionNumber,
   calcFamilyNameNumber,
+  calcFiveElements,
   calcGivenNameNumber,
+  calcGridLines,
+  calcBirthDigitFrequency,
   calcLifePathNumber,
   calcMiddleNameNumber,
   calcPersonalityNumber,
   calcSoulUrgeNumber,
+  FIVE_ELEMENT_LABELS,
 } from '../utils/numerology';
-import { LIFE_PATH_COMPATIBILITY, NUMBER_INSIGHTS, NUMEROLOGY_METRICS } from '../data/numerologyInsights';
+import type { FiveElement } from '../utils/numerology';
+import {
+  FIVE_ELEMENT_INSIGHTS,
+  GRID_LINE_INSIGHTS,
+  GRID_LINE_META,
+  LIFE_PATH_COMPATIBILITY,
+  NUMBER_INSIGHTS,
+  NUMEROLOGY_METRICS,
+} from '../data/numerologyInsights';
 import type { NumerologyMetricKey } from '../data/numerologyInsights';
+import { FiveElementsChart, LifeWheelRadarChart, PythagoreanGridMini } from './NumerologyVisuals';
+import type { RadarMetricPoint } from './NumerologyVisuals';
 
 interface DetailStudent {
   name: string;
@@ -53,10 +67,31 @@ interface NumerologyDetailSidebarProps {
   onClose: () => void;
 }
 
+/** Xác định hành nổi trội nhất (dominant) và các hành thiếu hụt hoàn toàn (0%). */
+function pickFiveElementHighlights(distribution: Record<FiveElement, number> | null) {
+  if (!distribution) return { dominant: null, lacking: [] as FiveElement[] };
+  const entries = Object.entries(distribution) as [FiveElement, number][];
+  const dominant = entries.reduce((best, cur) => (cur[1] > best[1] ? cur : best))[0];
+  const lacking = entries.filter(([, pct]) => pct === 0).map(([el]) => el);
+  return { dominant, lacking };
+}
+
 const NumerologyDetailSidebar = forwardRef<HTMLDivElement, NumerologyDetailSidebarProps>(
   ({ student, onClose }, ref) => {
     const lifePath = calcLifePathNumber(student.birthDate);
     const compatibility = lifePath !== null ? LIFE_PATH_COMPATIBILITY[lifePath] : null;
+
+    const radarData: RadarMetricPoint[] = NUMEROLOGY_METRICS.map((metric) => {
+      const raw = CALCULATORS[metric.key](student);
+      return { label: metric.radarLabel, value: raw ?? 0, raw };
+    });
+
+    const fiveElements = calcFiveElements(student.birthDate);
+    const { dominant: dominantElement, lacking: lackingElements } = pickFiveElementHighlights(fiveElements);
+
+    const birthFrequency = calcBirthDigitFrequency(student.birthDate);
+    const gridLines = birthFrequency ? calcGridLines(birthFrequency.counts) : [];
+    const notableGridLines = gridLines.filter((l) => l.state !== 'neutral');
 
     return (
       <div
@@ -78,6 +113,12 @@ const NumerologyDetailSidebar = forwardRef<HTMLDivElement, NumerologyDetailSideb
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          <div className="pb-5 border-b border-slate-100 space-y-5">
+            <LifeWheelRadarChart data={radarData} />
+            <FiveElementsChart birthDate={student.birthDate} />
+            <PythagoreanGridMini birthDate={student.birthDate} />
+          </div>
+
           {NUMEROLOGY_METRICS.map((metric) => {
             const value = CALCULATORS[metric.key](student);
             const insight = value !== null ? NUMBER_INSIGHTS[value] : null;
@@ -118,6 +159,60 @@ const NumerologyDetailSidebar = forwardRef<HTMLDivElement, NumerologyDetailSideb
               </div>
             );
           })}
+
+          {fiveElements && dominantElement && (
+            <div className="pb-5 border-b border-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">Ngũ hành</h3>
+              <div className="space-y-4">
+                <div>
+                  <span className="block text-xs font-medium text-slate-500 mb-0.5">
+                    Hành nổi trội — {FIVE_ELEMENT_LABELS[dominantElement]} ({fiveElements[dominantElement]}%)
+                  </span>
+                  <div className="space-y-2.5 text-sm text-slate-600 leading-relaxed">
+                    <p>{FIVE_ELEMENT_INSIGHTS[dominantElement].dominant.meaning}</p>
+                    <p>{FIVE_ELEMENT_INSIGHTS[dominantElement].dominant.studyTip}</p>
+                    <p>{FIVE_ELEMENT_INSIGHTS[dominantElement].dominant.communicationTip}</p>
+                  </div>
+                </div>
+                {lackingElements.map((el) => (
+                  <div key={el}>
+                    <span className="block text-xs font-medium text-slate-500 mb-0.5">
+                      Hành thiếu hụt — {FIVE_ELEMENT_LABELS[el]} (0%)
+                    </span>
+                    <div className="space-y-2.5 text-sm text-slate-600 leading-relaxed">
+                      <p>{FIVE_ELEMENT_INSIGHTS[el].lacking.meaning}</p>
+                      <p>{FIVE_ELEMENT_INSIGHTS[el].lacking.studyTip}</p>
+                      <p>{FIVE_ELEMENT_INSIGHTS[el].lacking.communicationTip}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {notableGridLines.length > 0 && (
+            <div className="pb-5 border-b border-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">Lưới Pythagoras</h3>
+              <div className="space-y-4">
+                {notableGridLines.map((line) => {
+                  const meta = GRID_LINE_META[line.key];
+                  const insight = GRID_LINE_INSIGHTS[line.key][line.state as 'strength' | 'weakness'];
+                  return (
+                    <div key={line.key}>
+                      <span className="block text-xs font-medium text-slate-500 mb-0.5">
+                        {meta.label} ({meta.digitsLabel}) — {line.state === 'strength' ? 'Điểm mạnh' : 'Điểm cần bồi đắp'}
+                      </span>
+                      <div className="space-y-2.5 text-sm text-slate-600 leading-relaxed">
+                        <p>{insight.meaning}</p>
+                        <p>{insight.studyTip}</p>
+                        <p>{insight.communicationTip}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div>
             <div className="flex items-center gap-2 mb-2">

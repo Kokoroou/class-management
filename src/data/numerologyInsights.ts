@@ -19,6 +19,8 @@ export interface NumerologyMetricDef {
   key: NumerologyMetricKey;
   label: string;
   subtitle: string;
+  /** Nhãn rút gọn dùng làm tên trục trong biểu đồ radar (Bánh xe cuộc đời). */
+  radarLabel: string;
   /** Giải thích cách tính và ý nghĩa tổng quát của chỉ số. */
   description: string;
   /** true nếu chỉ số này cần cột Họ và tên đầy đủ mới tính được. */
@@ -30,6 +32,7 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     key: 'lifePath',
     label: 'Số chủ đạo',
     subtitle: 'Life Path Number',
+    radarLabel: 'Chủ đạo',
     description:
       'Tính từ tổng các chữ số trong ngày sinh (ngày, tháng, năm). Đây là chỉ số quan trọng nhất, thể hiện con đường phát triển và bài học lớn xuyên suốt cuộc đời.',
     requiresFullName: false,
@@ -38,6 +41,7 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     key: 'expression',
     label: 'Số sứ mệnh',
     subtitle: 'Expression / Destiny Number',
+    radarLabel: 'Sứ mệnh',
     description:
       'Tính từ tổng giá trị chữ cái trong họ và tên đầy đủ. Thể hiện tài năng bẩm sinh và định hướng phát huy năng lực của học sinh.',
     requiresFullName: true,
@@ -46,6 +50,7 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     key: 'soulUrge',
     label: 'Số linh hồn',
     subtitle: 'Soul Urge Number',
+    radarLabel: 'Linh hồn',
     description:
       'Tính từ các nguyên âm trong họ và tên. Thể hiện mong muốn và động lực nội tâm thực sự — điều học sinh thực sự khao khát dù có thể không nói ra.',
     requiresFullName: true,
@@ -54,6 +59,7 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     key: 'personality',
     label: 'Số nhân cách',
     subtitle: 'Personality Number',
+    radarLabel: 'Nhân cách',
     description:
       'Tính từ các phụ âm trong họ và tên. Thể hiện ấn tượng đầu tiên mà học sinh tạo ra với thầy cô, bạn bè xung quanh.',
     requiresFullName: true,
@@ -62,6 +68,7 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     key: 'birthDay',
     label: 'Số ngày sinh',
     subtitle: 'Birth Day Number',
+    radarLabel: 'Ngày sinh',
     description:
       'Tính riêng từ ngày sinh trong tháng (không gồm tháng, năm). Thể hiện một năng khiếu hoặc điểm mạnh cụ thể, bổ trợ thêm cho Số chủ đạo.',
     requiresFullName: false,
@@ -70,6 +77,7 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     key: 'familyName',
     label: 'Số Họ',
     subtitle: 'Family Name Number',
+    radarLabel: 'Họ',
     description:
       'Tính riêng từ phần Họ — từ đầu tiên trong họ tên đầy đủ. Thể hiện ảnh hưởng của dòng họ, nền tảng gia đình đến tính cách và những giá trị mà học sinh mang theo.',
     requiresFullName: true,
@@ -78,6 +86,7 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     key: 'middleName',
     label: 'Số Tên đệm',
     subtitle: 'Middle Name Number',
+    radarLabel: 'Tên đệm',
     description:
       'Tính riêng từ phần Tên đệm — các từ ở giữa họ tên đầy đủ, có thể không có nếu họ tên chỉ gồm 2 từ. Thể hiện lớp tính cách trung gian, cách học sinh điều hòa giữa ảnh hưởng gia đình (Số Họ) và bản sắc riêng (Số Tên).',
     requiresFullName: true,
@@ -86,6 +95,7 @@ export const NUMEROLOGY_METRICS: NumerologyMetricDef[] = [
     key: 'givenName',
     label: 'Số Tên',
     subtitle: 'Given Name Number',
+    radarLabel: 'Tên',
     description:
       'Tính riêng từ phần Tên — từ cuối cùng trong họ tên đầy đủ, cũng là tên học sinh thường được gọi hàng ngày. Thể hiện bản sắc cá nhân, khía cạnh mà học sinh thể hiện rõ nét nhất trong đời sống thường ngày.',
     requiresFullName: true,
