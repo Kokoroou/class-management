@@ -1,136 +1,138 @@
 <div align="center">
 
-# Quản lý Lớp học
+🇬🇧 English | [🇻🇳 Tiếng Việt](README_vi.md)
 
-Bộ công cụ giúp giáo viên trực quan hóa và quản lý lớp học: sơ đồ hỗ trợ học tập, sơ đồ chỗ ngồi, và bảng thần số học — tất cả đều chạy hoàn toàn trên trình duyệt, không cần backend.
+# Class Management
+
+A toolkit that helps homeroom teachers visualize and manage their classroom: a peer-support tree, a seating chart, and a numerology table — all running entirely in the browser, no backend required.
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 
-**[Xem demo trực tuyến](https://kokoroou.github.io/class-management/)**
+**[View live demo](https://kokoroou.github.io/class-management/)**
 
 </div>
 
 ---
 
-## Giới thiệu
+## Overview
 
-**Quản lý Lớp học** là một ứng dụng web tập hợp nhiều công cụ nhỏ phục vụ công việc thường ngày của giáo viên chủ nhiệm, dựa trên danh sách học sinh nhập từ file Excel hoặc nhập tay trực tiếp. Mỗi công cụ đều hỗ trợ: khởi tạo từ file mẫu có sẵn, chỉnh sửa trực quan trên giao diện (chọn, kéo-thả, sửa nhanh), lưu tự động vào trình duyệt (localStorage), và xuất kết quả ra ảnh PNG hoặc file Excel.
+**Class Management** is a web app that bundles several small tools for a homeroom teacher's everyday work, built around a student list imported from Excel or entered by hand. Every tool supports: starting from a ready-made sample, visual editing (select, drag-and-drop, quick edit), autosave to the browser (localStorage), and exporting results as a PNG image or an Excel file.
 
-## Các trang / route
+## Pages / routes
 
-| Route | Công cụ |
+| Route | Tool |
 | --- | --- |
-| `/` | Trang chủ — danh sách các công cụ |
-| `/support-tree` | Sơ đồ hỗ trợ học tập |
-| `/seating` | Sơ đồ chỗ ngồi |
-| `/numerology` | Thần số học |
+| `/` | Home — list of tools |
+| `/support-tree` | Peer-support tree |
+| `/seating` | Seating chart |
+| `/numerology` | Numerology |
 
-## Tính năng chung giữa các công cụ
+## Features shared across tools
 
-- **3 điểm khởi đầu**: tạo mới trống, bắt đầu từ dữ liệu mẫu có sẵn, hoặc tải lên file Excel/CSV.
-- **Chọn & sửa nhanh**: click để chọn một hoặc nhiều mục (kéo chuột để chọn theo vùng — marquee selection, giữ Ctrl/Shift để chọn thêm), double-click để đổi tên/sửa nội dung ngay tại chỗ.
-- **Lưu tự động**: dữ liệu đang làm việc được lưu vào `localStorage` của trình duyệt, không mất khi tải lại trang.
-- **Nút Reset**: xóa dữ liệu hiện tại để quay về màn hình chọn điểm khởi đầu.
-- **Xuất kết quả**: hầu hết công cụ đều cho phép xuất ảnh PNG và/hoặc file Excel.
+- **3 starting points**: start blank, start from built-in sample data, or upload an Excel/CSV file.
+- **Select & quick-edit**: click to select one or more items (drag to marquee-select an area, hold Ctrl/Shift to add to the selection), double-click to rename/edit content in place.
+- **Autosave**: work-in-progress data is saved to the browser's `localStorage`, so nothing is lost on reload.
+- **Reset button**: clears the current data and returns to the starting-point screen.
+- **Export**: most tools can export a PNG image and/or an Excel file.
 
-## Chi tiết từng công cụ
+## Tool details
 
-### 1. Sơ đồ hỗ trợ học tập (`/support-tree`)
+### 1. Peer-support tree (`/support-tree`)
 
-Dựng sơ đồ mạng lưới "đôi bạn cùng tiến" / nhóm hỗ trợ trong lớp dưới dạng cây phân cấp.
+Builds a "study buddy" / peer-support network for the class as a hierarchical tree diagram.
 
-- Nhập từ Excel (cột STT, Tên học sinh, STT Quản lý) hoặc tạo mẫu 30 học sinh sẵn có.
-- Tự động sắp xếp bố cục cây bằng Dagre; sắp xếp lại bất cứ lúc nào bằng nút **Tự động sắp xếp**.
-- Thêm/xóa node, nối/xóa quan hệ (cạnh) trực tiếp trên canvas; thêm node mới tự nối vào node đang chọn.
-- Xuất sơ đồ ra ảnh PNG hoặc xuất lại danh sách quan hệ ra file Excel.
+- Import from Excel (columns: No., Student Name, Supervisor No.) or generate a built-in 30-student sample.
+- Automatic tree layout via Dagre; re-layout anytime with the **Auto-arrange** button.
+- Add/remove nodes and connect/remove relationships (edges) directly on the canvas; a new node auto-connects to the currently selected node.
+- Export the diagram as a PNG image, or export the relationship list back to an Excel file.
 
-### 2. Sơ đồ chỗ ngồi (`/seating`)
+### 2. Seating chart (`/seating`)
 
-Xếp chỗ ngồi học sinh bằng kéo-thả vào sơ đồ bàn ghế tùy chỉnh.
+Arrange student seating by dragging students onto a customizable desk layout.
 
-- Tùy chỉnh số hàng/cột của lớp, và loại bàn (1–4 chỗ ngồi mỗi bàn).
-- Kéo-thả học sinh giữa hàng chờ và các bàn, hoặc hoán đổi vị trí giữa hai học sinh.
-- Chọn nhiều bàn/học sinh để **nhóm** thành một bàn lớn hơn, hoặc **tách** một bàn thành các bàn đơn.
-- Mẫu sẵn có: 30 học sinh xếp vào các bàn đôi (3 bàn/hàng x 5 hàng).
-- Xuất sơ đồ ra ảnh PNG hoặc file Excel (kèm sheet cấu hình); khi import lại đúng file đã xuất, sơ đồ chỗ ngồi được khôi phục nguyên trạng (không chỉ danh sách học sinh).
+- Customize the number of rows/columns and desk type (1–4 seats per desk).
+- Drag students between the waiting pool and desks, or swap two students' positions.
+- Select multiple desks/students to **merge** them into a larger desk, or **split** a desk back into single ones.
+- Built-in sample: 30 students seated at two-seat desks (3 desks/row x 5 rows).
+- Export as a PNG image or an Excel file (with a config sheet); re-importing that exported file restores the full seating layout, not just the student list.
 
-### 3. Thần số học (`/numerology`)
+### 3. Numerology (`/numerology`)
 
-Nhập ngày sinh và họ tên học sinh để tự động tính các chỉ số thần số học, phục vụ việc chia nhóm/xếp lớp.
+Enter each student's birth date and full name to automatically compute numerology indices, useful for grouping/class placement.
 
-- Tính tự động **Số chủ đạo** (từ ngày sinh) và **Số tên** (từ họ tên) cho từng học sinh, kèm ý nghĩa mỗi con số.
-- Nhập từ Excel (cột Tên học sinh, Ngày sinh dd/mm/yyyy) hoặc bắt đầu từ mẫu 15 học sinh có sẵn.
-- Sắp xếp theo STT/tên/Số chủ đạo/Số tên, và lọc danh sách theo Số chủ đạo để nhóm học sinh tương đồng.
-- Thêm/xóa học sinh, sửa tên và ngày sinh trực tiếp trên bảng.
-- Xuất bảng ra ảnh PNG hoặc file Excel.
+- Automatically computes a **Life Path Number** (from birth date) and a **Name Number** (from full name) for each student, along with each number's meaning.
+- Import from Excel (columns: Student Name, Birth Date dd/mm/yyyy) or start from a built-in 15-student sample.
+- Sort by No./name/Life Path Number/Name Number, and filter by Life Path Number to group similar students.
+- Add/remove students, and edit name and birth date directly in the table.
+- Export the table as a PNG image or an Excel file.
 
-## Công nghệ sử dụng
+## Tech stack
 
 - [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/) — build tool
-- [React Router](https://reactrouter.com/) — điều hướng giữa các công cụ
-- [@xyflow/react](https://reactflow.dev/) — vẽ sơ đồ dạng node/edge (Sơ đồ hỗ trợ học tập)
-- [Dagre](https://github.com/dagrejs/dagre) — tự động bố cục cây
-- [SheetJS (xlsx)](https://sheetjs.com/) — đọc/ghi file Excel
+- [React Router](https://reactrouter.com/) — navigation between tools
+- [@xyflow/react](https://reactflow.dev/) — node/edge diagramming (peer-support tree)
+- [Dagre](https://github.com/dagrejs/dagre) — automatic tree layout
+- [SheetJS (xlsx)](https://sheetjs.com/) — read/write Excel files
 - [Tailwind CSS](https://tailwindcss.com/) — styling
-- [html-to-image](https://github.com/bubkoo/html-to-image) — xuất sơ đồ/bảng ra PNG
-- [lucide-react](https://lucide.dev/) — icon
+- [html-to-image](https://github.com/bubkoo/html-to-image) — export diagrams/tables as PNG
+- [lucide-react](https://lucide.dev/) — icons
 
-## Bắt đầu
+## Getting started
 
-### Yêu cầu
+### Requirements
 
-- [Node.js](https://nodejs.org/) 18 trở lên
-- [Bun](https://bun.sh/) (khuyến nghị, dự án dùng `bun.lock`) hoặc npm/pnpm/yarn
+- [Node.js](https://nodejs.org/) 18+
+- [Bun](https://bun.sh/) (recommended — the project uses `bun.lock`) or npm/pnpm/yarn
 
-### Cài đặt
+### Install
 
 ```bash
 bun install
-# hoặc: npm install
+# or: npm install
 ```
 
-### Chạy dự án ở môi trường phát triển
+### Run in development
 
 ```bash
 bun run dev
-# hoặc: npm run dev
+# or: npm run dev
 ```
 
-Ứng dụng sẽ chạy tại `http://localhost:3000`.
+The app runs at `http://localhost:3000`.
 
-### Build production
+### Build for production
 
 ```bash
 bun run build
-# hoặc: npm run build
+# or: npm run build
 ```
 
-Kết quả build nằm trong thư mục `dist/`.
+The build output is in the `dist/` directory.
 
-### Kiểm tra kiểu dữ liệu (TypeScript)
+### Type-check (TypeScript)
 
 ```bash
 bun run lint
-# hoặc: npm run lint
+# or: npm run lint
 ```
 
-## Định dạng file Excel đầu vào
+## Input Excel file format
 
-Mỗi công cụ chấp nhận một định dạng cột hơi khác nhau (tên cột linh hoạt, không phân biệt vị trí):
+Each tool accepts a slightly different set of columns (column names are matched flexibly, position doesn't matter):
 
-| Công cụ | Các cột cần có | Ví dụ |
+| Tool | Required columns | Example |
 | --- | --- | --- |
-| Sơ đồ hỗ trợ học tập | STT, Tên học sinh, STT Quản lý | `1`, `Nguyễn Văn A`, `1` |
-| Sơ đồ chỗ ngồi | STT, Tên học sinh | `1`, `Nguyễn Văn A` |
-| Thần số học | Tên học sinh, Ngày sinh (dd/mm/yyyy) | `Nguyễn Văn A`, `01/02/2010` |
+| Peer-support tree | No., Student Name, Supervisor No. | `1`, `Nguyễn Văn A`, `1` |
+| Seating chart | No., Student Name | `1`, `Nguyễn Văn A` |
+| Numerology | Student Name, Birth Date (dd/mm/yyyy) | `Nguyễn Văn A`, `01/02/2010` |
 
-Có thể bắt đầu từ dữ liệu mẫu ngay trong mỗi công cụ (nút **Bắt đầu từ mẫu** ở màn hình khởi đầu) để tham khảo định dạng chuẩn.
+You can start from the built-in sample data in each tool (the **Start from sample** button on the starting screen) to see the expected format.
 
-## Cấu trúc thư mục
+## Project structure
 
 ```
 class-management/
@@ -138,21 +140,21 @@ class-management/
 │   ├── components/     # Layout, ResetButton, ToolPageToolbar, StartingPointPicker...
 │   ├── hooks/           # useLocalStorage, useSelection, useMarqueeSelection, useResetTool...
 │   ├── pages/            # HomePage, SupportTreePage, SeatingPage, NumerologyPage
-│   ├── utils/            # numerology.ts — tính Số chủ đạo/Số tên
-│   ├── App.tsx           # Khai báo route
-│   ├── main.tsx          # Điểm khởi chạy ứng dụng React
+│   ├── utils/            # numerology.ts — Life Path/Name Number calculations
+│   ├── App.tsx           # Route declarations
+│   ├── main.tsx          # React app entry point
 │   └── index.css         # Tailwind CSS entry
 ├── index.html
 ├── vite.config.ts
 └── package.json
 ```
 
-## Triển khai (Deployment)
+## Deployment
 
-Dự án được cấu hình để tự động triển khai lên **GitHub Pages** thông qua GitHub Actions mỗi khi có thay đổi được đẩy lên nhánh `main`. Xem chi tiết workflow tại [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+The project is configured to auto-deploy to **GitHub Pages** via GitHub Actions on every push to the `main` branch. See the workflow at [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
-Trang sau khi triển khai có thể truy cập tại: https://kokoroou.github.io/class-management/
+Once deployed, the site is available at: https://kokoroou.github.io/class-management/
 
 ## License
 
-Dự án được phát hành theo giấy phép [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/deed.vi) — được tự do sử dụng, sao chép và chỉnh sửa cho mục đích **phi thương mại**, kèm ghi công nguồn gốc. Xem chi tiết tại file [`LICENSE`](LICENSE).
+This project is released under the [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/) license — free to use, copy, and modify for **non-commercial** purposes, with attribution. See the [`LICENSE`](LICENSE) file for details.
