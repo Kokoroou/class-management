@@ -4,6 +4,11 @@
 
 Bộ công cụ giúp giáo viên trực quan hóa và quản lý lớp học: sơ đồ hỗ trợ học tập, sơ đồ chỗ ngồi, và bảng thần số học — tất cả đều chạy hoàn toàn trên trình duyệt, không cần backend.
 
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+
 **[Xem demo trực tuyến](https://kokoroou.github.io/class-management/)**
 
 </div>
@@ -150,4 +155,4 @@ Trang sau khi triển khai có thể truy cập tại: https://kokoroou.github.i
 
 ## License
 
-Dự án chưa xác định giấy phép sử dụng cụ thể.
+Dự án được phát hành theo giấy phép [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/deed.vi) — được tự do sử dụng, sao chép và chỉnh sửa cho mục đích **phi thương mại**, kèm ghi công nguồn gốc. Xem chi tiết tại file [`LICENSE`](LICENSE).
